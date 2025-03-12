@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema(
   {
@@ -19,10 +19,10 @@ const UserSchema = new mongoose.Schema(
 
     transactions: [
       {
-        type: { type: String, enum: ["withdrawal", "fund_wallet", "investment"], required: true },
+        type: { type: String, enum: ['withdrawal', 'fund_wallet', 'investment'], required: true },
         amount: { type: Number, required: true },
         date: { type: Date, default: Date.now },
-        status: { type: String, enum: ["pending", "completed", "failed"], default: "pending" },
+        status: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' },
       },
     ],
 
@@ -58,4 +58,4 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("User", UserSchema);
+module.exports = mongoose.model('User', UserSchema);
