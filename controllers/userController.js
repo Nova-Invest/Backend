@@ -182,31 +182,20 @@ const editUser = async (req, res) => {
       profileImage,
     } = req.body;
 
-    // const user = await User.findById(req.params.id);
-    // if (!user) return res.status(404).json({ message: "User not found" });
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // user.phoneNumber = phoneNumber;
-    // user.address = address;
-    // user.nin = nin;
-    // user.dob = dob;
-    // user.bankDetails = {
-    //   accountName,
-    //   accountNumber,
-    //   bankName,
-    // };
-    // user.profile.profilePicture = profileImage;
+    user.phoneNumber = phoneNumber;
+    user.address = address;
+    user.nin = nin;
+    user.dob = dob;
+    user.bankDetails.accountName = accountName;
+    user.bankDetails.accountNumber = accountNumber;
+    user.bankDetails.bankName = bankName;
+    user.profile.profilePicture = profileImage;
 
-    // await user.save();
-    res.status(200).json({
-      phoneNumber,
-      address,
-      nin,
-      dob,
-      bankName,
-      accountNumber,
-      accountName,
-      profileImage,
-    });
+    await user.save();
+    res.status(200).json({ user });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
