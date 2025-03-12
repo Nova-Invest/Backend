@@ -3,51 +3,6 @@ const User = require('../models/User');
 const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
 
 /**
- * @desc Initialize Paystack payment
- * @route POST /api/payment/initialize
- */
-const initializePayment = async (req, res) => {
-  const { amount } = req.body;
-
-  // Validate the amount
-  if (!amount || isNaN(amount)) {
-    return res.status(400).json({ message: 'Please provide a valid amount' });
-  }
-
-  try {
-    // Fetch the user from the database using the ID from the token
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Initialize Paystack payment
-    const response = await axios.post(
-      'https://api.paystack.co/transaction/initialize',
-      {
-        amount: amount * 100, // Paystack expects amount in kobo
-        email: user.email, // Use the user's email from the database
-        metadata: {
-          userId: user._id, // Include user ID in metadata for reference
-        },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${paystackSecretKey}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    // Return the Paystack authorization URL to the frontend
-    res.status(200).json(response.data);
-  } catch (error) {
-    console.error('Error initializing Paystack payment:', error);
-    res.status(500).json({ message: 'Error initializing payment' });
-  }
-};
-
-/**
  * @desc Verify Paystack payment
  * @route GET /api/payment/verify
  */
@@ -78,13 +33,17 @@ const verifyPayment = async (req, res) => {
         return res.status(404).json({ message: 'User not found' });
       }
 
+      // Convert amount from kobo to Naira
+      const amountInNaira = amount / 100;
+
       // Update the user's wallet balance
-      user.balances.walletBalance += amount / 100; // Convert back to Naira
+      user.balances.walletBalance += amountInNaira;
 
       // Add the transaction to the user's transactions array
       user.transactions.push({
         type: 'fund_wallet',
-        amount: amount / 100,
+        amount: amountInNaira,
+        date: new Date(),
         status: 'completed',
       });
 
@@ -103,4 +62,4 @@ const verifyPayment = async (req, res) => {
   }
 };
 
-module.exports = { initializePayment, verifyPayment };
+module.exports = { verifyPayment };
