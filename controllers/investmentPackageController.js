@@ -1,4 +1,5 @@
 const InvestmentPackage = require('../models/InvestmentPackage');
+const User = require('../models/User');
 
 // @desc    Get all investment packages
 // @route   GET /api/investment-packages
@@ -87,8 +88,7 @@ const deleteInvestmentPackage = async (req, res) => {
 const registerUserToPackage = async (req, res) => {
     try {
       const { id } = req.params; // Investment package ID
-      const { amountInvested } = req.body; // Amount invested by the user
-      const userId = req.user._id; // User ID from the authenticated user
+      const { amountInvested, userId } = req.body; // Amount invested by the user and user ID
   
       // Fetch the investment package
       const investmentPackage = await InvestmentPackage.findById(id);
