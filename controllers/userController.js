@@ -185,15 +185,13 @@ const editUser = async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    user.phoneNumber = phoneNumber;
-    user.address = address;
-    user.nin = nin;
-    user.dob = dob;
-    user.bankDetails = {
-      accountName,
-      accountNumber,
-      bankName,
-    };
+    user.profile.phoneNumber = phoneNumber;
+    user.profile.address = address;
+    user.profile.nin = nin;
+    user.profile.dob = dob;
+    user.bankDetails.accountName = accountName;
+    user.bankDetails.accountNumber = accountNumber;
+    user.bankDetails.bankName = bankName;
     user.profile.profilePicture = profileImage;
 
     await user.save();
