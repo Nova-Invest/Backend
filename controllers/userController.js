@@ -113,8 +113,17 @@ const updateUser = async (req, res) => {
     user.lastName = lastName || user.lastName;
     user.phoneNumber = phoneNumber || user.phoneNumber;
     user.email = email || user.email;
-    user.profile = profile || user.profile;
+
+    // Update the profile, including address
+    user.profile.address = profile.address || user.profile.address;
+    user.profile.nin = profile.nin || user.profile.nin;
+    user.profile.dob = profile.dob || user.profile.dob;
+    user.profile.profilePicture = profile.profilePicture || user.profile.profilePicture;
+
+    // Update bank details
     user.bankDetails = bankDetails || user.bankDetails;
+
+    // Update other fields
     user.nextOfKin = nextOfKin || user.nextOfKin;
     user.investmentPackage = investmentPackage || user.investmentPackage;
 
@@ -125,6 +134,7 @@ const updateUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 /**
  * @desc Delete user
