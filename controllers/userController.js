@@ -1,7 +1,7 @@
-const User = require('../models/User');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-require('dotenv').config();
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
 /**
  * @desc Register a new user
@@ -13,14 +13,16 @@ const registerUser = async (req, res) => {
 
     // Check if user already exists
     let user = await User.findOne({ email });
-    if (user) return res.status(400).json({ message: 'User already exists' });
+    if (user) return res.status(400).json({ message: "User already exists" });
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Generate JWT token
-    const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ email }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
     // Create user
     user = new User({
@@ -33,7 +35,9 @@ const registerUser = async (req, res) => {
     });
 
     await user.save();
-    res.status(201).json({ message: 'User registered successfully', token, user });
+    res
+      .status(201)
+      .json({ message: "User registered successfully", token, user });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -49,14 +53,17 @@ const loginUser = async (req, res) => {
 
     // Check if user exists
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
     // Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!isMatch)
+      return res.status(400).json({ message: "Invalid credentials" });
 
     // Generate JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
     // Update token in database
     user.token = token;
@@ -74,7 +81,7 @@ const loginUser = async (req, res) => {
  */
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select('-password');
+    const users = await User.find().select("-password");
     res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -87,8 +94,8 @@ const getAllUsers = async (req, res) => {
  */
 const getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    const user = await User.findById(req.params.id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     res.status(200).json(user);
   } catch (error) {
@@ -102,10 +109,19 @@ const getUserById = async (req, res) => {
  */
 const updateUser = async (req, res) => {
   try {
-    const { firstName, lastName, phoneNumber, email, profile, bankDetails, nextOfKin, investmentPackage } = req.body;
+    const {
+      firstName,
+      lastName,
+      phoneNumber,
+      email,
+      profile,
+      bankDetails,
+      nextOfKin,
+      investmentPackage,
+    } = req.body;
 
     const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     user.firstName = firstName || user.firstName;
     user.lastName = lastName || user.lastName;
@@ -116,7 +132,8 @@ const updateUser = async (req, res) => {
     user.profile.address = profile.address || user.profile.address;
     user.profile.nin = profile.nin || user.profile.nin;
     user.profile.dob = profile.dob || user.profile.dob;
-    user.profile.profilePicture = profile.profilePicture || user.profile.profilePicture;
+    user.profile.profilePicture =
+      profile.profilePicture || user.profile.profilePicture;
 
     // Update bank details
     user.bankDetails = bankDetails || user.bankDetails;
@@ -126,7 +143,7 @@ const updateUser = async (req, res) => {
     user.investmentPackage = investmentPackage || user.investmentPackage;
 
     await user.save();
-    res.status(200).json({ message: 'User updated successfully', user });
+    res.status(200).json({ message: "User updated successfully", user });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -139,13 +156,63 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     await user.remove();
-    res.status(200).json({ message: 'User deleted successfully' });
+    res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-module.exports = { registerUser, loginUser, getAllUsers, getUserById, updateUser, deleteUser };
+/**
+ * @desc Edit user
+ * @route PUT /api/edit-user/:id
+ */
+const editUser = async (req, res) => {
+  try {
+    const {
+      phoneNumber,
+      address,
+      nin,
+      dob,
+      bankName,
+      accountNumber,
+      accountName,
+      profileImage,
+    } = req.body;
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!req.file) {
+      return res.status(400).send("No file uploaded.");
+    }
+
+    user.phoneNumber = phoneNumber;
+    user.address = address;
+    user.nin = nin;
+    user.dob = dob;
+    user.bankDetails = {
+      accountName,
+      accountNumber,
+      bankName,
+    };
+    user.profile.profilePicture = profileImage;
+
+    await user.save();
+    res.status(200).json({ message: "User Edited successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+  editUser,
+};
