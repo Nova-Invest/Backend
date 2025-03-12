@@ -185,10 +185,6 @@ const editUser = async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (!req.file) {
-      return res.status(400).send("No file uploaded.");
-    }
-
     user.phoneNumber = phoneNumber;
     user.address = address;
     user.nin = nin;
