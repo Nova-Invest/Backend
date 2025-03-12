@@ -85,29 +85,68 @@ const deleteInvestmentPackage = async (req, res) => {
 // @route   POST /api/investment-packages/:id/register
 // @access  Private
 const registerUserToPackage = async (req, res) => {
-  try {
-    const { id } = req.params; // Investment package ID
-    const { amountInvested } = req.body; // Amount invested by the user
-    const userId = req.user._id; // User ID from the authenticated user
-
-    // Check if the investment package exists
-    const investmentPackage = await InvestmentPackage.findById(id);
-    if (!investmentPackage) {
-      return res.status(404).json({ message: '❌ Investment package not found' });
+    try {
+      const { id } = req.params; // Investment package ID
+      const { amountInvested } = req.body; // Amount invested by the user
+      const userId = req.user._id; // User ID from the authenticated user
+  
+      // Fetch the investment package
+      const investmentPackage = await InvestmentPackage.findById(id);
+      if (!investmentPackage) {
+        return res.status(404).json({ message: '❌ Investment package not found' });
+      }
+  
+      // Fetch the user
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: '❌ User not found' });
+      }
+  
+      // Check if the user has sufficient wallet balance
+      if (user.balances.walletBalance < amountInvested) {
+        return res.status(400).json({ message: '❌ Insufficient wallet balance' });
+      }
+  
+      // Deduct the amount from wallet balance and add to invested balance
+      user.balances.walletBalance -= amountInvested;
+      user.balances.investedBalance += amountInvested;
+  
+      // Calculate ROI and add to withdrawable balance
+      const roi = (amountInvested * investmentPackage.interestRate) / 100;
+      user.balances.withdrawableBalance += roi;
+  
+      // Add the investment to the user's investmentPackage array
+      user.investmentPackage.push({
+        name: investmentPackage.name,
+        startDate: new Date(),
+        maturityDate: new Date(new Date().setMonth(new Date().getMonth() + investmentPackage.duration)),
+        amountInvested,
+        interestRate: investmentPackage.interestRate,
+        duration: `${investmentPackage.duration} months`,
+      });
+  
+      // Add the transaction to the user's transaction history
+      user.transactions.push({
+        type: 'investment',
+        amount: amountInvested,
+        status: 'completed',
+      });
+  
+      // Save the updated user
+      await user.save();
+  
+      // Add the user to the investment package's users array
+      investmentPackage.users.push({
+        userId,
+        amountInvested,
+      });
+      await investmentPackage.save();
+  
+      res.status(200).json({ message: '✅ Investment successful', user });
+    } catch (error) {
+      res.status(500).json({ message: '❌ Server Error', error: error.message });
     }
-
-    // Add the user to the users array
-    investmentPackage.users.push({
-      userId,
-      amountInvested,
-    });
-    await investmentPackage.save();
-
-    res.status(200).json({ message: '✅ User registered successfully', investmentPackage });
-  } catch (error) {
-    res.status(500).json({ message: '❌ Server Error', error: error.message });
-  }
-};
+  };
 
 module.exports = {
   getAllInvestmentPackages,
