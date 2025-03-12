@@ -20,7 +20,9 @@ const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Generate JWT token
-    const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ email }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
     // Create user
     user = new User({
@@ -33,8 +35,9 @@ const registerUser = async (req, res) => {
     });
 
     await user.save();
-    res.status(201).json({ message: "User registered successfully", token, user });
-
+    res
+      .status(201)
+      .json({ message: "User registered successfully", token, user });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -54,17 +57,19 @@ const loginUser = async (req, res) => {
 
     // Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+    if (!isMatch)
+      return res.status(400).json({ message: "Invalid credentials" });
 
     // Generate JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
     // Update token in database
     user.token = token;
     await user.save();
 
     res.status(200).json({ token, user });
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -104,7 +109,16 @@ const getUserById = async (req, res) => {
  */
 const updateUser = async (req, res) => {
   try {
-    const { firstName, lastName, phoneNumber, email, profile, bankDetails, nextOfKin, investmentPackage } = req.body;
+    const {
+      firstName,
+      lastName,
+      phoneNumber,
+      email,
+      profile,
+      bankDetails,
+      nextOfKin,
+      investmentPackage,
+    } = req.body;
 
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -118,7 +132,8 @@ const updateUser = async (req, res) => {
     user.profile.address = profile.address || user.profile.address;
     user.profile.nin = profile.nin || user.profile.nin;
     user.profile.dob = profile.dob || user.profile.dob;
-    user.profile.profilePicture = profile.profilePicture || user.profile.profilePicture;
+    user.profile.profilePicture =
+      profile.profilePicture || user.profile.profilePicture;
 
     // Update bank details
     user.bankDetails = bankDetails || user.bankDetails;
@@ -129,12 +144,10 @@ const updateUser = async (req, res) => {
 
     await user.save();
     res.status(200).json({ message: "User updated successfully", user });
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 /**
  * @desc Delete user
@@ -147,10 +160,59 @@ const deleteUser = async (req, res) => {
 
     await user.remove();
     res.status(200).json({ message: "User deleted successfully" });
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-module.exports = { registerUser, loginUser, getAllUsers, getUserById, updateUser, deleteUser };
+/**
+ * @desc Edit user
+ * @route PUT /api/edit-user/:id
+ */
+const editUser = async (req, res) => {
+  try {
+    const {
+      phoneNumber,
+      address,
+      nin,
+      dob,
+      bankName,
+      accountNumber,
+      accountName,
+      profileImage,
+    } = req.body;
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!req.file) {
+      return res.status(400).send("No file uploaded.");
+    }
+
+    user.phoneNumber = phoneNumber;
+    user.address = address;
+    user.nin = nin;
+    user.dob = dob;
+    user.bankDetails = {
+      accountName,
+      accountNumber,
+      bankName,
+    };
+    user.profile.profilePicture = profileImage;
+
+    await user.save();
+    res.status(200).json({ message: "User Edited successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+  editUser,
+};
