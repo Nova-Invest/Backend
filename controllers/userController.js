@@ -3,8 +3,10 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
-// @desc Register a new user
-// @route POST /api/users/register
+/**
+ * @desc Register a new user
+ * @route POST /api/users/register
+ */
 const registerUser = async (req, res) => {
   try {
     const { firstName, lastName, phoneNumber, email, password } = req.body;
@@ -17,6 +19,9 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Generate JWT token
+    const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
     // Create user
     user = new User({
       firstName,
@@ -24,18 +29,21 @@ const registerUser = async (req, res) => {
       phoneNumber,
       email,
       password: hashedPassword,
+      token, // Save token in user document
     });
 
     await user.save();
-    res.status(201).json({ message: "User registered successfully" });
+    res.status(201).json({ message: "User registered successfully", token, user });
 
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc Login user & get token
-// @route POST /api/users/login
+/**
+ * @desc Login user & get token
+ * @route POST /api/users/login
+ */
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -51,6 +59,10 @@ const loginUser = async (req, res) => {
     // Generate JWT token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
+    // Update token in database
+    user.token = token;
+    await user.save();
+
     res.status(200).json({ token, user });
 
   } catch (error) {
@@ -58,8 +70,10 @@ const loginUser = async (req, res) => {
   }
 };
 
-// @desc Get all users
-// @route GET /api/users
+/**
+ * @desc Get all users
+ * @route GET /api/users
+ */
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select("-password");
@@ -69,8 +83,10 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-// @desc Get single user by ID
-// @route GET /api/users/:id
+/**
+ * @desc Get single user by ID
+ * @route GET /api/users/:id
+ */
 const getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
@@ -82,8 +98,10 @@ const getUserById = async (req, res) => {
   }
 };
 
-// @desc Update user
-// @route PUT /api/users/:id
+/**
+ * @desc Update user
+ * @route PUT /api/users/:id
+ */
 const updateUser = async (req, res) => {
   try {
     const { firstName, lastName, phoneNumber, email, profile, bankDetails, nextOfKin, investmentPackage } = req.body;
@@ -108,8 +126,10 @@ const updateUser = async (req, res) => {
   }
 };
 
-// @desc Delete user
-// @route DELETE /api/users/:id
+/**
+ * @desc Delete user
+ * @route DELETE /api/users/:id
+ */
 const deleteUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
