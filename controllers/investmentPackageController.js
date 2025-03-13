@@ -111,8 +111,8 @@ const registerUserToPackage = async (req, res) => {
       user.balances.walletBalance -= amountInvested;
       user.balances.investedBalance += amountInvested;
   
-      // Calculate ROI and add to withdrawable balance
-      const roi = (amountInvested * investmentPackage.interestRate) / 100;
+      // Calculate 20% of the invested amount and add to withdrawable balance
+      const roi = amountInvested * 0.2; // 20% of the invested amount
       user.balances.withdrawableBalance += roi;
   
       // Add the investment to the user's investmentPackage array
@@ -138,7 +138,7 @@ const registerUserToPackage = async (req, res) => {
       // Add the user to the investment package's users array
       investmentPackage.users.push({
         userId,
-        amountInvested,
+        amountInvested: amountInvested, // Fix typo here (should be amountInvested)
       });
       await investmentPackage.save();
   
