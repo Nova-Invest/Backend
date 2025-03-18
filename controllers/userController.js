@@ -172,6 +172,10 @@ const deleteUser = async (req, res) => {
 const editUser = async (req, res) => {
   try {
     const {
+      firstName,
+      lastName,
+      password,
+      email,
       phoneNumber,
       address,
       nin,
@@ -184,7 +188,11 @@ const editUser = async (req, res) => {
 
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
-
+    
+    user.profile.firstName = firstName;
+    user.profile.lastName = lastName;
+    user.profile.password = password;
+    user.profile.email = email;
     user.profile.phoneNumber = phoneNumber;
     user.profile.address = address;
     user.profile.nin = nin;
