@@ -201,6 +201,49 @@ const editUser = async (req, res) => {
   }
 };
 
+/**
+ * @desc Edit user
+ * @route PUT /api/edit-user/:id
+ */
+const addUser = async (req, res) => {
+  try {
+    const {
+      firstName,
+      lastName,
+      password,
+      email,
+      phoneNumber,
+      address,
+      nin,
+      dob,
+      bankName,
+      accountNumber,
+      accountName,
+      profileImage,
+    } = req.body;
+
+    const user = new User({
+      firstName,
+      lastName,
+      password,
+      email,
+      phoneNumber,
+      address,
+      nin,
+      dob,
+      bankName,
+      accountNumber,
+      accountName,
+      profileImage,
+    });
+
+    await user.save();
+    res.status(201).json({ message: "User Added Successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -209,4 +252,5 @@ module.exports = {
   updateUser,
   deleteUser,
   editUser,
+  addUser,
 };
