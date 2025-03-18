@@ -189,9 +189,11 @@ const editUser = async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     user.firstName = firstName;
     user.lastName = lastName;
-    user.password = password;
+    user.password = hashedPassword || user.password;
     user.email = email;
     user.profile.phoneNumber = phoneNumber;
     user.profile.address = address;
