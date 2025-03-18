@@ -222,10 +222,18 @@ const addUser = async (req, res) => {
       profileImage,
     } = req.body;
 
+    let userExists = await User.findOne({ email });
+    if (userExists)
+      return res.status(400).json({ message: "User already exists" });
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     const user = new User({
       firstName,
       lastName,
-      password,
+      password: hashedPassword,
       email,
       phoneNumber,
       address,
