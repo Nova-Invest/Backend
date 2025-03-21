@@ -8,6 +8,7 @@ const {
   deleteUser,
   editUser,
   addUser,
+  adminLogin,
 } = require("../controllers/userController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
@@ -16,6 +17,7 @@ const router = express.Router();
 // Public Routes
 router.post("/register", registerUser);
 router.post("/login", loginUser);
+router.post("/admin-login", adminLogin);
 
 // Protected Routes (Requires JWT)
 router.get("/", authMiddleware, getAllUsers);

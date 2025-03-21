@@ -76,6 +76,32 @@ const loginUser = async (req, res) => {
 };
 
 /**
+ * @desc Admin Login & get token
+ * @route POST /api/users/admin-login
+ */
+const adminLogin = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (
+      username !== process.env.Growvest_Username ||
+      password !== process.env.Growvest_Passcode
+    ) {
+      res.status(500).json({ message: "Invalid Credentials" });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign({ username }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    res.status(200).json({ token });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
  * @desc Get all users
  * @route GET /api/users
  */
@@ -213,8 +239,8 @@ const editUser = async (req, res) => {
 };
 
 /**
- * @desc Edit user
- * @route PUT /api/edit-user/:id
+ * @desc Add user
+ * @route PUT /api/add-user/:id
  */
 const addUser = async (req, res) => {
   try {
@@ -272,4 +298,5 @@ module.exports = {
   deleteUser,
   editUser,
   addUser,
+  adminLogin,
 };
