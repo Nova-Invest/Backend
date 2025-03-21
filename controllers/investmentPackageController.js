@@ -114,8 +114,14 @@ const registerUserToPackage = async (req, res) => {
         .json({ message: "❌ Investment package not found" });
     }
 
-    // Fetch the user
+    // Check users profile if completed
     const user = await User.findById(userId);
+    if (!user.profileCompleted) {
+      return res
+        .status(404)
+        .json({ message: "❌ You Must Complete Profile First" });
+    }
+
     if (!user) {
       return res.status(404).json({ message: "❌ User not found" });
     }
