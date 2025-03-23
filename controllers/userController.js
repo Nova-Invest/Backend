@@ -360,7 +360,7 @@ const addNextOfKin = async (req, res) => {
         phoneNumber,
         relationship,
         user,
-        message: "It has rendered",
+        message: "It has rendered now!!!",
       },
     });
   } catch (error) {
