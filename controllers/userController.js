@@ -231,6 +231,29 @@ const editUser = async (req, res) => {
     user.bankDetails.bankName = bankName;
     user.profile.profilePicture = profileImage;
 
+    if (
+      user.firstName &&
+      user.lastName &&
+      user.password &&
+      user.email &&
+      user.profile &&
+      user.profile.phoneNumber &&
+      user.profile.address &&
+      user.profile.nin &&
+      user.profile.dob &&
+      user.profile.profilePicture &&
+      user.bankDetails &&
+      user.bankDetails.accountName &&
+      user.bankDetails.accountNumber &&
+      user.bankDetails.bankName &&
+      user.nextOfKin &&
+      user.nextOfKin.fullName &&
+      user.nextOfKin.relationship &&
+      user.nextOfKin.phoneNumber
+    ) {
+      user.profileCompleted = true;
+    }
+
     await user.save();
     res.status(200).json({ user });
   } catch (error) {
@@ -289,6 +312,28 @@ const addUser = async (req, res) => {
   }
 };
 
+/**
+ * @desc Add Next Of Kin
+ * @route PUT /api/add-next-of-kin/:id
+ */
+const addNextOfKin = async (req, res) => {
+  try {
+    const { fullName, phoneNumber, relationship } = req.body;
+
+    const user = await User.findById(req.params.id);
+
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    user.nextOfKin.fullName = fullName;
+    user.nextOfKin.phoneNumber = phoneNumber;
+    user.nextOfKin.relationship = relationship;
+
+    res.status(201).json({ message: "Next Of Kin Added Successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -299,4 +344,5 @@ module.exports = {
   editUser,
   addUser,
   adminLogin,
+  addNextOfKin,
 };
