@@ -328,6 +328,29 @@ const addNextOfKin = async (req, res) => {
     user.nextOfKin.phoneNumber = phoneNumber;
     user.nextOfKin.relationship = relationship;
 
+    if (
+      user.firstName &&
+      user.lastName &&
+      user.password &&
+      user.email &&
+      user.profile &&
+      user.profile.phoneNumber &&
+      user.profile.address &&
+      user.profile.nin &&
+      user.profile.dob &&
+      user.profile.profilePicture &&
+      user.bankDetails &&
+      user.bankDetails.accountName &&
+      user.bankDetails.accountNumber &&
+      user.bankDetails.bankName &&
+      user.nextOfKin &&
+      user.nextOfKin.fullName &&
+      user.nextOfKin.relationship &&
+      user.nextOfKin.phoneNumber
+    ) {
+      user.profileCompleted = true;
+    }
+
     await user.save();
 
     res.status(201).json({
