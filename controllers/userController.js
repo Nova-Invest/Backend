@@ -296,13 +296,17 @@ const addUser = async (req, res) => {
       password: hashedPassword,
       email,
       phoneNumber,
-      address,
-      nin,
-      dob,
-      bankName,
-      accountNumber,
-      accountName,
-      profileImage,
+      profile: {
+        address,
+        nin,
+        dob,
+        profilePicture: profileImage,
+      },
+      bankDetails: {
+        bankName,
+        accountNumber,
+        accountName,
+      },
     });
 
     await user.save();
