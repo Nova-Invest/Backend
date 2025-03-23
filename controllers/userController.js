@@ -333,8 +333,8 @@ const addNextOfKin = async (req, res) => {
       user.lastName &&
       user.password &&
       user.email &&
+      user.phoneNumber &&
       user.profile &&
-      user.profile.phoneNumber &&
       user.profile.address &&
       user.profile.nin &&
       user.profile.dob &&
@@ -360,6 +360,7 @@ const addNextOfKin = async (req, res) => {
         phoneNumber,
         relationship,
         user,
+        message: "It has rendered",
       },
     });
   } catch (error) {
