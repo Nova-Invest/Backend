@@ -328,6 +328,8 @@ const addNextOfKin = async (req, res) => {
     user.nextOfKin.phoneNumber = phoneNumber;
     user.nextOfKin.relationship = relationship;
 
+    await user.save();
+
     res.status(201).json({ message: "Next Of Kin Added Successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
