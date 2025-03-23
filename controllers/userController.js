@@ -330,7 +330,15 @@ const addNextOfKin = async (req, res) => {
 
     await user.save();
 
-    res.status(201).json({ message: "Next Of Kin Added Successfully" });
+    res.status(201).json({
+      message: "Next Of Kin Added Successfully",
+      data: {
+        fullName,
+        phoneNumber,
+        relationship,
+        user,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
