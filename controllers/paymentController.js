@@ -96,6 +96,10 @@ const withdraw = async (req, res) => {
     const { amount, recipient_code } = req.body;
     const user = await User.findById(req.params.id);
 
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     const response = await axios.post(
       "https://api.paystack.co/transfer",
       {
@@ -132,6 +136,10 @@ const finalizeTransfer = async (req, res) => {
   try {
     const { transfer_code, otp } = req.body;
     const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     const response = await axios.post(
       `https://api.paystack.co/transfer/finalize_transfer/`,
