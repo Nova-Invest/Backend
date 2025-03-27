@@ -94,6 +94,7 @@ const createRecipient = async (req, res) => {
 const withdraw = async (req, res) => {
   try {
     const { amount, recipient_code } = req.body;
+    const user = await User.findById(req.params.id);
 
     const response = await axios.post(
       "https://api.paystack.co/transfer",
@@ -111,6 +112,15 @@ const withdraw = async (req, res) => {
       }
     );
 
+    user.withdrawableBalance = user.withdrawableBalance - amount;
+    user.transactions.push({
+      type: "withdrawal",
+      amount,
+      status: "completed",
+    });
+
+    await user.save();
+
     res.json(response.data);
   } catch (error) {
     console.error("Error handling withdrawal:", error);
@@ -121,6 +131,7 @@ const withdraw = async (req, res) => {
 const finalizeTransfer = async (req, res) => {
   try {
     const { transfer_code, otp } = req.body;
+    const user = await User.findById(req.params.id);
 
     const response = await axios.post(
       `https://api.paystack.co/transfer/finalize_transfer/`,
@@ -136,11 +147,18 @@ const finalizeTransfer = async (req, res) => {
       }
     );
 
+    user.withdrawableBalance = user.withdrawableBalance - amount;
+    user.transactions.push({
+      type: "withdrawal",
+      amount,
+      status: "completed",
+    });
+
     res.json(response.data);
   } catch (error) {
     console.error("Error finalizing transfer:", error);
     res.status(500).json({ message: "Error finalizing transfer" });
   }
-};
+}; // Using otp
 
 module.exports = { verifyPayment, createRecipient, withdraw, finalizeTransfer };
