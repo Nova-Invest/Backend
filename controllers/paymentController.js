@@ -118,4 +118,29 @@ const withdraw = async (req, res) => {
   }
 };
 
-module.exports = { verifyPayment, createRecipient, withdraw };
+const finalizeTransfer = async (req, res) => {
+  try {
+    const { transfer_code, otp } = req.body;
+
+    const response = await axios.post(
+      `https://api.paystack.co/transfer/finalize_transfer/`,
+      {
+        transfer_code,
+        otp,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${paystackSecretKey}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error finalizing transfer:", error);
+    res.status(500).json({ message: "Error finalizing transfer" });
+  }
+};
+
+module.exports = { verifyPayment, createRecipient, withdraw, finalizeTransfer };
