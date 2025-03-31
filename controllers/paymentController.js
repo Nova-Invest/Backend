@@ -106,7 +106,7 @@ const withdraw = async (req, res) => {
         source: "balance",
         amount: amount * 1000,
         recipient: recipient_code,
-        reason: "Test Withdrawal",
+        reason: "Withdrawal",
       },
       {
         headers: {
