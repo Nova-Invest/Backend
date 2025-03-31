@@ -178,17 +178,10 @@ const resolveAccount = async (req, res) => {
   try {
     const { account_number, bank_code } = req.body;
 
-    const response = await axios.get("https://api.paystack.co/bank/resolve", {
-      params: {
-        account_number: account_number,
-        bank_code: bank_code,
-      },
-      headers: {
-        Authorization: `Bearer ${paystackSecretKey}`,
-      },
-    });
-
-    res.json(response.data); // Send the response data to the client
+    res.json({
+      account_number,
+      bank_code,
+    }); // Send the response data to the client
   } catch (error) {
     console.error("Error resolving account:", error);
     res.status(500).json({
