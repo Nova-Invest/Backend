@@ -94,6 +94,11 @@ const createRecipient = async (req, res) => {
 const withdraw = async (req, res) => {
   try {
     const { amount, recipient_code } = req.body;
+    const user = await User.findById(req.body.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     const response = await axios.post(
       "https://api.paystack.co/transfer",
@@ -111,6 +116,20 @@ const withdraw = async (req, res) => {
       }
     );
 
+    // if (response.data.status !== "success") {
+    //   return res.status(500).json({ message: "Payment transfer failed" });
+    // }
+
+    user.balances.withdrawableBalance =
+      user.balances.withdrawableBalance - amount;
+    user.transactions.push({
+      type: "withdrawal",
+      amount,
+      status: "completed",
+    });
+
+    await user.save();
+
     res.json(response.data);
   } catch (error) {
     console.error("Error handling withdrawal:", error);
@@ -118,4 +137,72 @@ const withdraw = async (req, res) => {
   }
 };
 
-module.exports = { verifyPayment, createRecipient, withdraw };
+const finalizeTransfer = async (req, res) => {
+  try {
+    const { transfer_code, otp } = req.body;
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const response = await axios.post(
+      `https://api.paystack.co/transfer/finalize_transfer/`,
+      {
+        transfer_code,
+        otp,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${paystackSecretKey}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    user.withdrawableBalance = user.withdrawableBalance - amount;
+    user.transactions.push({
+      type: "withdrawal",
+      amount,
+      status: "completed",
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error finalizing transfer:", error);
+    res.status(500).json({ message: "Error finalizing transfer" });
+  }
+}; // Using otp
+
+const resolveAccount = async (req, res) => {
+  try {
+    const { account_number, bank_code } = req.body;
+
+    const response = await axios.get("https://api.paystack.co/bank/resolve", {
+      params: {
+        account_number: account_number,
+        bank_code: bank_code,
+      },
+      headers: {
+        Authorization: `Bearer ${paystackSecretKey}`,
+      },
+    });
+
+    res.json(response.data); // Send the response data to the client
+  } catch (error) {
+    console.error("Error resolving account:", error);
+    res.status(500).json({
+      message: "Error resolving account",
+      error: error.message,
+      errors: error,
+    });
+  }
+};
+
+module.exports = {
+  verifyPayment,
+  createRecipient,
+  withdraw,
+  finalizeTransfer,
+  resolveAccount,
+};
