@@ -174,7 +174,7 @@ const finalizeTransfer = async (req, res) => {
   }
 }; // Using otp
 
-const resolveAccount = async () => {
+const resolveAccount = async (req, res) => {
   try {
     const { account_number, bank_code } = req.body;
 
