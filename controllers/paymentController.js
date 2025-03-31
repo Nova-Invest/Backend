@@ -125,7 +125,7 @@ const withdraw = async (req, res) => {
     user.transactions.push({
       type: "withdrawal",
       amount,
-      status: "completed",
+      status: response.data.status,
     });
 
     await user.save();
