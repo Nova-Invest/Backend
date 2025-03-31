@@ -4,6 +4,7 @@ const {
   createRecipient,
   withdraw,
   finalizeTransfer,
+  resolveAccount,
 } = require("../controllers/paymentController");
 
 const router = express.Router();
@@ -11,7 +12,8 @@ const router = express.Router();
 // Verify payment
 router.get("/verify", verifyPayment);
 router.post("/create-recipient", createRecipient);
-router.post("/withdraw", withdraw); // shiould work
+router.post("/withdraw", withdraw);
 router.post("/finalize-transfer", finalizeTransfer);
+router.post("/resolve", resolveAccount);
 
 module.exports = router;

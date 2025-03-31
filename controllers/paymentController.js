@@ -174,4 +174,31 @@ const finalizeTransfer = async (req, res) => {
   }
 }; // Using otp
 
-module.exports = { verifyPayment, createRecipient, withdraw, finalizeTransfer };
+const resolveAccount = async () => {
+  try {
+    const { account_number, bank_code } = req.body;
+
+    const response = await axios.get(
+      `https://api.paystack.co/resolve?account_number=${account_number}&bank_code=${bank_code}`,
+      {
+        headers: {
+          Authorization: `Bearer ${paystackSecretKey}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    res.json(response.data);
+  } catch {
+    console.error("Error resolving account:", error);
+    res.status(500).json({ message: "Error resolving account" });
+  }
+};
+
+module.exports = {
+  verifyPayment,
+  createRecipient,
+  withdraw,
+  finalizeTransfer,
+  resolveAccount,
+};
