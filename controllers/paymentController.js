@@ -191,8 +191,14 @@ const resolveAccount = async (req, res) => {
 
     res.json(response.data); // Send the response data to the client
   } catch (error) {
-    console.error("Error resolving account:", error); // Log the error
-    res.status(500).json({ message: "Error resolving account" }); // Send an error response
+    console.error("Error resolving account:", error);
+    res
+      .status(500)
+      .json({
+        message: "Error resolving account",
+        error: error.message,
+        errors: error,
+      });
   }
 };
 
