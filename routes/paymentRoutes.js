@@ -13,7 +13,7 @@ const router = express.Router();
 router.get("/verify", verifyPayment);
 router.post("/create-recipient", createRecipient);
 router.post("/withdraw", withdraw);
-router.post("/finalize-transfer", finalizeTransfer);
+router.post("/finalize-transfer", finalizeTransfer); //
 router.post("/resolve", resolveAccount); // For getting  bank account info
 
 module.exports = router;
