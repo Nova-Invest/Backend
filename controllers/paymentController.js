@@ -185,7 +185,6 @@ const resolveAccount = async (req, res) => {
       },
       headers: {
         Authorization: `Bearer ${paystackSecretKey}`,
-        "Content-Type": "application/json",
       },
     });
 
@@ -194,6 +193,8 @@ const resolveAccount = async (req, res) => {
     console.error("Error resolving account:", error);
     res.status(500).json({
       message: "Error resolving account",
+      error: error.message,
+      errors: error,
     });
   }
 };
