@@ -104,9 +104,9 @@ const withdraw = async (req, res) => {
       "https://api.paystack.co/transfer",
       {
         source: "balance",
-        amount,
+        amount: amount * 100,
         recipient: recipient_code,
-        reason: "Test Withdrawal",
+        reason: "Withdrawal From Growvewst",
       },
       {
         headers: {
