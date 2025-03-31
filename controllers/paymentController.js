@@ -189,7 +189,7 @@ const resolveAccount = async () => {
     );
 
     res.json(response.data);
-  } catch {
+  } catch (error) {
     console.error("Error resolving account:", error);
     res.status(500).json({ message: "Error resolving account" });
   }
