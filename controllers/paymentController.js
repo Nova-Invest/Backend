@@ -120,12 +120,18 @@ const withdraw = async (req, res) => {
     //   return res.status(500).json({ message: "Payment transfer failed" });
     // }
 
+    let status;
+
+    if (response.data.status === "pending") status = "pending";
+    if (response.data.status === "success") status = "completed";
+    if (response.data.status === "failed") status = "failed";
+
     user.balances.withdrawableBalance =
       user.balances.withdrawableBalance - amount;
     user.transactions.push({
       type: "withdrawal",
       amount,
-      status: response.data.status,
+      status,
     });
 
     await user.save();
