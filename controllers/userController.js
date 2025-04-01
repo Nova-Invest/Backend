@@ -364,7 +364,35 @@ const addNextOfKin = async (req, res) => {
         phoneNumber,
         relationship,
         user,
-        message: "It has rendered now!!!",
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @desc Fetch Pending Withdrawals
+ * @route GET /api/pending-withdrawals
+ */
+const pendingWithdrawals = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    let pendingTransactions;
+
+    if (user) {
+      pendingTransactions = user.transactions.filter((txn) => {
+        txn.status === "pending";
+      });
+    } else {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    res.status(201).json({
+      message: "Pending Transactions Successfully Fetched",
+      data: {
+        pendingTransactions,
       },
     });
   } catch (error) {
@@ -383,4 +411,5 @@ module.exports = {
   addUser,
   adminLogin,
   addNextOfKin,
+  pendingWithdrawals,
 };

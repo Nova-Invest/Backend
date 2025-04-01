@@ -10,6 +10,7 @@ const {
   addUser,
   adminLogin,
   addNextOfKin,
+  pendingWithdrawals,
 } = require("../controllers/userController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
@@ -28,5 +29,6 @@ router.delete("/:id", authMiddleware, deleteUser);
 router.put("/edit-user/:id", authMiddleware, editUser);
 router.post("/add-user", authMiddleware, addUser);
 router.post("/add-next-of-kin/:id", authMiddleware, addNextOfKin); // Add next of kin
+router.gdt("/pending-withdrawals/:id", authMiddleware, pendingWithdrawals); // Add next of kin
 
 module.exports = router;
