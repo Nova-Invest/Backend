@@ -207,10 +207,41 @@ const resolveAccount = async (req, res) => {
   }
 };
 
+const webhook = async (req, res) => {
+  try {
+    const event = req.body;
+
+    if (
+      event.event === "transfer.success" ||
+      event.event === "transfer.failed"
+    ) {
+      const transferCode = event.data.transfer_code;
+      const newStatus =
+        event.event === "transfer.success" ? "success" : "failed";
+
+      const user = await User.findOne({
+        "transactions.transfer_code": transferCode,
+      });
+
+      if (user) {
+        await User.updateOne(
+          { "transactions.transfer_code": transferCode },
+          { $set: { "transactions.$.status": newStatus } }
+        );
+      }
+    }
+
+    res.sendStatus(200);
+  } catch (error) {
+    res.status(500).json({ message: "Error updating payment" });
+  }
+};
+
 module.exports = {
   verifyPayment,
   createRecipient,
   withdraw,
   finalizeTransfer,
   resolveAccount,
+  webhook,
 };
