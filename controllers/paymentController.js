@@ -124,7 +124,8 @@ const withdraw = async (req, res) => {
 
     if (response.data.status === "pending") status = "pending";
     if (response.data.status === "success") status = "completed";
-    if (response.data.status === "failed") status = "failed";
+    if (response.data.status === "failed")
+      return res.status(500).json({ message: "Payment Error" });
 
     user.balances.withdrawableBalance =
       user.balances.withdrawableBalance - amount;
@@ -133,6 +134,7 @@ const withdraw = async (req, res) => {
       amount,
       status,
     });
+    user.transactions.transfer_code = response.data.transfer_code || "None";
 
     await user.save();
 
