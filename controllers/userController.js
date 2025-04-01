@@ -382,11 +382,11 @@ const pendingWithdrawals = async (req, res) => {
     let pendingTransactions;
 
     if (user) {
-      pendingTransactions = user.transactions.filter((txn) => {
-        txn.status === "pending";
-      });
+      pendingTransactions = user.transactions.filter(
+        (txn) => txn.status === "pending"
+      );
     } else {
-      return res.status(400).json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
 
     res.status(201).json({
