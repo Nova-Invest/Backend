@@ -1,6 +1,7 @@
 const axios = require("axios");
 const User = require("../models/User");
 const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
+const crypto = require("crypto");
 
 /**
  * @desc Verify Paystack payment
@@ -209,6 +210,16 @@ const resolveAccount = async (req, res) => {
 
 const webhook = async (req, res) => {
   try {
+    const hash = crypto
+      .createHmac("sha512", paystackSecretKey)
+      .update(JSON.stringify(req.body))
+      .digest("hex");
+    const signature = req.headers["x-paystack-signature"];
+
+    if (hash !== signature) {
+      return res.status(401).json({ message: "UNAUTHORIZED!!" });
+    }
+
     const event = req.body;
 
     if (
