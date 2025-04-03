@@ -117,9 +117,13 @@ const withdraw = async (req, res) => {
       }
     );
 
-    // if (response.data.status !== "success") {
-    //   return res.status(500).json({ message: "Payment transfer failed" });
-    // }
+    const money = "kk";
+
+    if (money !== "success") {
+      res
+        .status(500)
+        .json({ message: "Payment transfer failed", data: response.data });
+    }
 
     let status;
 
