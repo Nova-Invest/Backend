@@ -126,7 +126,7 @@ const withdraw = async (req, res) => {
     if (money !== "success") {
       res.status(500).json({
         message: "Payment transfer failed",
-        data: `Error: ${data}`,
+        data,
       });
     }
 
