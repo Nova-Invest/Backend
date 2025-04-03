@@ -142,9 +142,7 @@ const withdraw = async (req, res) => {
     res.json(response.data);
   } catch (error) {
     console.error("Error handling withdrawal:", error);
-    res
-      .status(500)
-      .json({ message: "Error verifying payment", error: `Error: ${error}` });
+    res.status(500).json({ message: "Error verifying payment" });
   }
 };
 
