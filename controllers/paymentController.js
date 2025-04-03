@@ -123,9 +123,9 @@ const withdraw = async (req, res) => {
 
     let status;
 
-    if (response.data.status === "pending") status = "pending";
-    if (response.data.status === "success") status = "completed";
-    if (response.data.status === "failed")
+    if (response.data.data.status === "pending") status = "pending";
+    if (response.data.data.status === "success") status = "completed";
+    if (response.data.data.status === "failed")
       return res.status(500).json({ message: "Payment Error" });
 
     user.balances.withdrawableBalance =
@@ -142,7 +142,9 @@ const withdraw = async (req, res) => {
     res.json(response.data);
   } catch (error) {
     console.error("Error handling withdrawal:", error);
-    res.status(500).json({ message: "Error verifying payment" });
+    res
+      .status(500)
+      .json({ message: "Error verifying payment", error: `Error: ${error}` });
   }
 };
 
