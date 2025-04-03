@@ -117,17 +117,15 @@ const withdraw = async (req, res) => {
       }
     );
 
-    if (response) {
-      return res
-        .status(500)
-        .json({ message: "Payment transfer failed", data: response.data });
-    }
+    // if (response.data.status !== "success") {
+    //   return res.status(500).json({ message: "Payment transfer failed" });
+    // }
 
     let status;
 
-    if (response.data.data.status === "pending") status = "pending";
-    if (response.data.data.status === "success") status = "completed";
-    if (response.data.data.status === "failed")
+    if (response.data.status === "pending") status = "pending";
+    if (response.data.status === "success") status = "completed";
+    if (response.data.status === "failed")
       return res.status(500).json({ message: "Payment Error" });
 
     user.balances.withdrawableBalance =
