@@ -101,34 +101,25 @@ const withdraw = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const response = await fetch(
+    const response = await axios.post(
       "https://api.paystack.co/transfer",
-
       {
-        method: "POST",
+        source: "balance",
+        amount: amount * 100,
+        recipient: recipient_code,
+        reason: "Withdrawal From Growvewst",
+      },
+      {
         headers: {
           Authorization: `Bearer ${paystackSecretKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          source: "balance",
-          amount: amount * 100,
-          recipient: recipient_code,
-          reason: "Withdrawal From Growvewst",
-        }),
       }
     );
 
-    const data = await response.json();
-
-    const money = "kk";
-
-    if (money !== "success") {
-      res.status(500).json({
-        message: "Payment transfer failed",
-        data,
-      });
-    }
+    // if (response.data.status !== "success") {
+    //   return res.status(500).json({ message: "Payment transfer failed" });
+    // }
 
     let status;
 
