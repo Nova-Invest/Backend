@@ -134,7 +134,7 @@ const withdraw = async (req, res) => {
       type: "withdrawal",
       amount,
       status,
-      transfer_code: response.data.transfer_code || "None",
+      transfer_code: response.data.data.transfer_code || "None",
     });
 
     await user.save();
