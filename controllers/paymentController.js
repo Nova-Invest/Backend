@@ -119,15 +119,15 @@ const withdraw = async (req, res) => {
       }
     );
 
+    const data = await response.json();
+
     const money = "kk";
 
     if (money !== "success") {
-      res
-        .status(500)
-        .json({
-          message: "Payment transfer failed",
-          data: `Error: ${response.data}`,
-        });
+      res.status(500).json({
+        message: "Payment transfer failed",
+        data: `Error: ${data}`,
+      });
     }
 
     let status;
