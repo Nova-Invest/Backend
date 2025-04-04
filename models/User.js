@@ -9,6 +9,7 @@ const UserSchema = new mongoose.Schema(
     password: { type: String, required: true },
     token: { type: String }, // Token field added
     profileCompleted: { type: Boolean, default: false },
+    transactionOTP: { type: String }, // OTP for transactions
 
     profile: {
       profilePicture: { type: String },

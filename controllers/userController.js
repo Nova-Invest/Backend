@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const sendOTP = require("../utils/sendOTP");
 require("dotenv").config();
 
 /**
@@ -400,6 +401,57 @@ const pendingWithdrawals = async (req, res) => {
   }
 };
 
+/**
+ * @desc Generate OTP
+ * @route POST /api/get-otp
+ */
+const generateOTP = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const otp = await sendOtp(
+      process.env.Admin_Email,
+      process.env.Admin_Password,
+      user.email
+    );
+    if (!otp) return res.status(400).json({ message: "OTP not generated" });
+
+    // Save OTP to db
+    user.transactionOTP = otp;
+    await user.save();
+
+    res.status(201).json({
+      message: "OTP Successfully Generated",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @desc Confirm OTP
+ * @route POST /api/confirm-otp
+ */
+const confirmOTP = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    const { otp } = req.body;
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.transactionOTP !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    res.status(200).json({
+      message: "OTP Successfully Confirmed",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -412,4 +464,6 @@ module.exports = {
   adminLogin,
   addNextOfKin,
   pendingWithdrawals,
+  generateOTP,
+  confirmOTP,
 };
