@@ -410,7 +410,7 @@ const generateOTP = async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const otp = await sendOtp(
+    const otp = await sendOTP(
       process.env.Admin_Email,
       process.env.Admin_Password,
       user.email
