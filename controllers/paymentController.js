@@ -240,7 +240,7 @@ const webhook = async (req, res) => {
           {
             $set: {
               "transactions.$.status":
-                newStatus === "completed" ? "completed" : "pending",
+                newStatus === "success" ? "completed" : "pending",
             },
           }
         );
