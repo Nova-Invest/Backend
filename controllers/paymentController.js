@@ -237,7 +237,12 @@ const webhook = async (req, res) => {
       if (user) {
         await User.updateOne(
           { "transactions.transfer_code": transferCode },
-          { $set: { "transactions.$.status": newStatus } }
+          {
+            $set: {
+              "transactions.$.status":
+                newStatus === "completed" ? "completed" : "pending",
+            },
+          }
         );
       }
     }
