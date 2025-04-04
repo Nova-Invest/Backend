@@ -32,7 +32,7 @@ router.put("/edit-user/:id", authMiddleware, editUser);
 router.post("/add-user", authMiddleware, addUser);
 router.post("/add-next-of-kin/:id", authMiddleware, addNextOfKin); // Add next of kin
 router.get("/pending-withdrawals/:id", authMiddleware, pendingWithdrawals); // Add next of kin
-router.get("/get-otp/:id", authMiddleware, generateOTP); // Generate OTP
-router.get("/confirm-otp/:id", authMiddleware, confirmOTP); // Confirmn OTP
+router.post("/get-otp/:id", authMiddleware, generateOTP); // Generate OTP
+router.post("/confirm-otp/:id", authMiddleware, confirmOTP); // Confirmn OTP
 
 module.exports = router;
