@@ -1,6 +1,5 @@
 const { generateOTP } = require("./generateOTP");
 const nodemailer = require("nodemailer");
-import img1 from "../assets/logo.jpeg"
 
 const sendOTP = async (userEmail) => {
   // Create transporter
@@ -32,6 +31,13 @@ const sendOTP = async (userEmail) => {
           margin: 0 auto;
           padding: 20px;
         }
+        
+        h2 {
+          text-align: left;
+          font-size: 1.875rem;
+          font-weight: 800;    
+          color: #172554;     
+
         .header {
           text-align: center;
           padding: 20px 0;
@@ -73,7 +79,7 @@ const sendOTP = async (userEmail) => {
     </head>
     <body>
       <div class="header">
-        <img src="${img1}" alt="Company Logo" class="logo">
+        <h1>GROWVEST</h1>
         <h2>Your One-Time Password</h2>
       </div>
       
