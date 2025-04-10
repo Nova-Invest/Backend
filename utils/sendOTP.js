@@ -6,7 +6,7 @@ const sendOTP = async (adminEmail, adminPass, userEmail) => {
     service: "Gmail",
     auth: {
       user: "thegrowvest@gmail.com",
-      pass: "5amasGroup123.",
+      pass: "umds vjpi kwix zpww",
     },
   });
 
