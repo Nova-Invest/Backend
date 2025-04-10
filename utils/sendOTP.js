@@ -1,6 +1,6 @@
 const { generateOTP } = require("./generateOTP");
 const nodemailer = require("nodemailer");
-import img1 from "../assets/logo.png"
+import img1 from "../assets/logo.jpeg"
 
 const sendOTP = async (userEmail) => {
   // Create transporter
