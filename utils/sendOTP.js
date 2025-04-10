@@ -7,7 +7,7 @@ const sendOTP = async (userEmail) => {
     service: "Gmail",
     auth: {
       user: "thegrowvest@gmail.com", // Consider using environment variables
-      pass: "umds vjpi kwix zpww",
+      pass: "umdsvjpikwixzpww",
     },
   });
 
