@@ -101,6 +101,10 @@ const withdraw = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    if (amount > user.balances.withdrawableBalance) {
+      return res.status(500).json({ message: "Insufficient Funds" });
+    }
+
     const response = await axios.post(
       "https://api.paystack.co/transfer",
       {
