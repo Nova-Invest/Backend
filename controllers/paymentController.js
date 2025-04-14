@@ -160,6 +160,7 @@ const withdraw = async (req, res) => {
     return res.status(500).json({
       message: "Error verifying payment",
       error: error.response?.data || error.message,
+      works: "It Works",
     });
   }
 };
