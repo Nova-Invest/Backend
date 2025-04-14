@@ -139,14 +139,14 @@ const withdraw = async (req, res) => {
       amount,
       status,
       transfer_code: response.data.data.transfer_code || "None",
-    });
+    }); 
 
     await user.save();
 
     res.json(response.data);
   } catch (error) {
     console.error("Error handling withdrawal:", error);
-    res.status(500).json({ message: "Error verifying payment" });
+    res.status(500).json({ message: "Error verifying payment", error });
   }
 };
 
