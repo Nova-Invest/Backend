@@ -121,9 +121,11 @@ const withdraw = async (req, res) => {
       }
     );
 
-    // if (response.data.status !== "success") {
-    //   return res.status(500).json({ message: "Payment transfer failed" });
-    // }
+    if (response.data.status !== "success") {
+      return res
+        .status(500)
+        .json({ message: "Payment transfer failed", data: response.data });
+    }
 
     let status;
 
@@ -139,7 +141,7 @@ const withdraw = async (req, res) => {
       amount,
       status,
       transfer_code: response.data.data.transfer_code || "None",
-    }); 
+    });
 
     await user.save();
 
