@@ -102,14 +102,14 @@ const withdraw = async (req, res) => {
     }
 
     if (amount > user.balances.withdrawableBalance) {
-      return res.status(500).json({ message: "Insufficient Funds" });
+      return res.status(400).json({ message: "Insufficient Funds" });
     }
 
     const response = await axios.post(
       "https://api.paystack.co/transfer",
       {
         source: "balance",
-        amount: amount * 100,
+        amount: amount * 100, // Convert to kobo
         recipient: recipient_code,
         reason: "Withdrawal From Growvewst",
       },
@@ -121,34 +121,46 @@ const withdraw = async (req, res) => {
       }
     );
 
-    if (response.data.status !== "success") {
-      return res
-        .status(500)
-        .json({ message: "Payment transfer failed", data: response.data });
+    const { status, message, data } = response.data;
+
+    if (!status) {
+      return res.status(500).json({
+        message: message || "Payment transfer failed",
+        data,
+      });
     }
 
-    let status;
+    // Determine transaction status
+    let transactionStatus = "pending";
+    if (data.status === "success") transactionStatus = "completed";
+    else if (data.status === "failed") {
+      return res.status(500).json({ message: "Payment Error", data });
+    }
 
-    if (response.data.status === "pending") status = "pending";
-    if (response.data.status === "success") status = "completed";
-    if (response.data.status === "failed")
-      return res.status(500).json({ message: "Payment Error" });
-
-    user.balances.withdrawableBalance =
-      user.balances.withdrawableBalance - amount;
+    // Update user balance and record transaction
+    user.balances.withdrawableBalance -= amount;
     user.transactions.push({
       type: "withdrawal",
       amount,
-      status,
-      transfer_code: response.data.data.transfer_code || "None",
+      status: transactionStatus,
+      transfer_code: data.transfer_code || "None",
     });
 
     await user.save();
 
-    res.json(response.data);
+    return res.status(200).json({
+      message: message || "Transfer initiated",
+      data,
+    });
   } catch (error) {
-    console.error("Error handling withdrawal:", error);
-    res.status(500).json({ message: "Error verifying payment", error });
+    console.error(
+      "Error handling withdrawal:",
+      error.response?.data || error.message
+    );
+    return res.status(500).json({
+      message: "Error verifying payment",
+      error: error.response?.data || error.message,
+    });
   }
 };
 
