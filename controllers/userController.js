@@ -253,6 +253,8 @@ const editUser = async (req, res) => {
       user.nextOfKin.phoneNumber
     ) {
       user.profileCompleted = true;
+    } else {
+      user.profileCompleted = false;
     }
 
     await user.save();
@@ -354,6 +356,8 @@ const addNextOfKin = async (req, res) => {
       user.nextOfKin.phoneNumber
     ) {
       user.profileCompleted = true;
+    } else {
+      user.profileCompleted = false;
     }
 
     await user.save();
@@ -415,6 +419,7 @@ const generateOTP = async (req, res) => {
       process.env.Admin_Password,
       user.email
     );
+
     if (!otp) return res.status(400).json({ message: "OTP not generated" });
 
     // Save OTP to db
