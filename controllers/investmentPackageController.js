@@ -138,7 +138,7 @@ const registerUserToPackage = async (req, res) => {
     user.balances.investedBalance += amountInvested;
 
     // Calculate 20% of the invested amount and add to withdrawable balance
-    const roi = amountInvested * 0.2; // 20% of the invested amount
+    const roi = amountInvested * (investmentPackage.interestRate / 100);
     user.balances.withdrawableBalance += roi;
 
     // Add the investment to the user's investmentPackage array
