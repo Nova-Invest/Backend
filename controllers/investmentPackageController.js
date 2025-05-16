@@ -1,4 +1,4 @@
-const InvestmentPackage = require("../models/InvestmentPackage");
+const InvestmentPackage = require("../models/Investment");
 const User = require("../models/User");
 
 // @desc    Get all investment packages
