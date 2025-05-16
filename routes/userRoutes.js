@@ -24,7 +24,7 @@ router.post("/login", loginUser);
 router.post("/admin-login", adminLogin);
 
 // Protected Routes (Requires JWT)
-router.get("/", authMiddleware, getAllUsers);
+router.get("/", getAllUsers);
 router.get("/:id", authMiddleware, getUserById);
 router.put("/:id", authMiddleware, updateUser);
 router.delete("/:id", authMiddleware, deleteUser);

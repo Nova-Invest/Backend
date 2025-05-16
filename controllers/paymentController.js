@@ -1,5 +1,6 @@
 const axios = require("axios");
 const User = require("../models/User");
+const mongoose = require("mongoose"); 
 const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
 const crypto = require("crypto");
 
@@ -271,6 +272,95 @@ const webhook = async (req, res) => {
   }
 };
 
+const manualBalanceUpdate = async (req, res) => {
+  try {
+    const { userId, amount, balanceType } = req.body;
+
+    // Validate input
+    if (!userId || amount === undefined || !balanceType) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Missing required fields: userId, amount, or balanceType" 
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Invalid user ID format" 
+      });
+    }
+
+    if (isNaN(amount) || amount < 0) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Amount must be a positive number" 
+      });
+    }
+
+    // Map balance types to valid transaction types
+    const typeMap = {
+      walletBalance: 'manual_wallet_update',
+      withdrawableBalance: 'manual_withdrawable_update',
+      investedBalance: 'manual_invested_update',
+      cooperativeBalance: 'manual_cooperative_update'
+    };
+
+    if (!typeMap[balanceType]) {
+      return res.status(400).json({ 
+        success: false,
+        message: `Invalid balance type. Must be one of: ${Object.keys(typeMap).join(', ')}` 
+      });
+    }
+
+    // Find and update user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        message: "User not found" 
+      });
+    }
+
+    // Record old balance for transaction history
+    const oldBalance = user.balances[balanceType] || 0;
+
+    // Update the balance
+    user.balances[balanceType] = amount;
+
+    // Add transaction record using the mapped type
+    user.transactions.push({
+      type: typeMap[balanceType],
+      amount: amount - oldBalance,
+      date: new Date(),
+      status: "completed",
+      description: `Manual ${balanceType} adjustment`,
+      reference: `MANUAL-${Date.now()}`,
+    });
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Balance updated successfully",
+      data: {
+        userId: user._id,
+        [balanceType]: user.balances[balanceType],
+        previousBalance: oldBalance,
+        balanceChange: amount - oldBalance
+      }
+    });
+
+  } catch (error) {
+    console.error("Error in manual balance update:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Internal server error",
+      error: error.message 
+    });
+  }
+};
+
 module.exports = {
   verifyPayment,
   createRecipient,
@@ -278,4 +368,5 @@ module.exports = {
   finalizeTransfer,
   resolveAccount,
   webhook,
+  manualBalanceUpdate
 };

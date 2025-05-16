@@ -61,7 +61,11 @@ const transactionSchema = new mongoose.Schema({
       "fund_wallet", 
       "investment", 
       "cooperative_payment",
-      "cooperative_withdrawal"
+      "cooperative_withdrawal",
+      "manual_wallet_update",          // Added
+      "manual_withdrawable_update",     // Added
+      "manual_invested_update",         // Added
+      "manual_cooperative_update"       // Added
     ],
     required: true,
   },

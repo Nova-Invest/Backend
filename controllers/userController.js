@@ -136,43 +136,133 @@ const getUserById = async (req, res) => {
  */
 const updateUser = async (req, res) => {
   try {
-    const {
-      firstName,
-      lastName,
-      phoneNumber,
-      email,
-      profile,
-      bankDetails,
-      nextOfKin,
-      investmentPackage,
-    } = req.body;
+    const { id } = req.params;
+    const updateData = req.body;
 
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    // Validate user ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
 
-    user.firstName = firstName || user.firstName;
-    user.lastName = lastName || user.lastName;
-    user.phoneNumber = phoneNumber || user.phoneNumber;
-    user.email = email || user.email;
+    // Find the user
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-    // Update the profile, including address
-    user.profile.address = profile.address || user.profile.address;
-    user.profile.nin = profile.nin || user.profile.nin;
-    user.profile.dob = profile.dob || user.profile.dob;
-    user.profile.profilePicture =
-      profile.profilePicture || user.profile.profilePicture;
+    // Update basic user info
+    if (updateData.firstName) user.firstName = updateData.firstName;
+    if (updateData.lastName) user.lastName = updateData.lastName;
+    if (updateData.phoneNumber) user.phoneNumber = updateData.phoneNumber;
+    if (updateData.email) user.email = updateData.email;
 
-    // Update bank details
-    user.bankDetails = bankDetails || user.bankDetails;
+    // Update profile (nested fields)
+    if (updateData.profile) {
+      user.profile = {
+        ...user.profile,
+        ...updateData.profile,
+      };
+    }
 
-    // Update other fields
-    user.nextOfKin = nextOfKin || user.nextOfKin;
-    user.investmentPackage = investmentPackage || user.investmentPackage;
+    // Update bank details (nested fields)
+    if (updateData.bankDetails) {
+      user.bankDetails = {
+        ...user.bankDetails,
+        ...updateData.bankDetails,
+      };
+    }
 
-    await user.save();
-    res.status(200).json({ message: "User updated successfully", user });
+    // Update next of kin (nested fields)
+    if (updateData.nextOfKin) {
+      user.nextOfKin = {
+        ...user.nextOfKin,
+        ...updateData.nextOfKin,
+      };
+    }
+
+    // Update investment package
+    if (updateData.investmentPackage) {
+      user.investmentPackage = updateData.investmentPackage;
+    }
+
+    // Handle balances update with transaction record
+    if (updateData.balances) {
+      const balanceChanges = {};
+      const originalBalances = { ...user.balances._doc };
+
+      // Check each balance field
+      for (const [key, value] of Object.entries(updateData.balances)) {
+        if (typeof value === 'number' && value >= 0) {
+          balanceChanges[key] = value;
+        }
+      }
+
+      // Only update if there are valid changes
+      if (Object.keys(balanceChanges).length > 0) {
+        user.balances = {
+          ...user.balances,
+          ...balanceChanges,
+        };
+
+        // Record balance changes in transactions
+        for (const [key, newValue] of Object.entries(balanceChanges)) {
+          const oldValue = originalBalances[key] || 0;
+          if (newValue !== oldValue) {
+            user.transactions.push({
+              type: `balance_adjustment_${key}`,
+              amount: newValue - oldValue,
+              date: new Date(),
+              status: "completed",
+              description: `Manual ${key} adjustment`,
+              reference: `MANUAL-${Date.now()}`,
+            });
+          }
+        }
+      }
+    }
+
+    // Save the updated user
+    const updatedUser = await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: {
+        user: {
+          _id: updatedUser._id,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          email: updatedUser.email,
+          phoneNumber: updatedUser.phoneNumber,
+          balances: updatedUser.balances,
+        },
+      },
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error updating user:", error);
+    
+    // Handle specific errors
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        errors: Object.values(error.errors).map(err => err.message),
+      });
+    }
+
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Duplicate field value entered",
+        field: Object.keys(error.keyPattern)[0],
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 
