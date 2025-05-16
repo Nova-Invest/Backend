@@ -136,81 +136,82 @@ const deleteCooperativePackage = async (req, res) => {
 // @route   POST /api/cooperative-packages/:id/join
 // @access  Private
 const joinCooperativePackage = async (req, res) => {
-  try {
-    const packageId = req.params.id;
-    const userId = req.user.id;
-    
-    // Check if package exists and is active
-    const cooperativePackage = await CooperativePackage.findById(packageId);
-    if (!cooperativePackage || !cooperativePackage.isActive) {
-      return res.status(404).json({ message: "❌ Cooperative package not available" });
+    try {
+      const packageId = req.params.id;
+      const userId = req.user.id;
+      
+      // Check if package exists and is active
+      const cooperativePackage = await CooperativePackage.findById(packageId);
+      if (!cooperativePackage || !cooperativePackage.isActive) {
+        return res.status(404).json({ message: "❌ Cooperative package not available" });
+      }
+      
+      // Check if user already joined
+      const existingMember = cooperativePackage.members.find(
+        member => member.userId.toString() === userId
+      );
+      
+      if (existingMember) {
+        return res.status(400).json({ message: "❌ You have already joined this package" });
+      }
+      
+      // Get user document
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "❌ User not found" });
+      }
+      
+      // Check user's profile completion (uncomment if needed)
+      // if (!user.profileCompleted) {
+      //   return res.status(400).json({ message: "❌ Please complete your profile first" });
+      // }
+      
+      // Calculate next payment date based on frequency
+      const nextPaymentDate = new Date();
+      if (cooperativePackage.contributionFrequency === 'monthly') {
+        nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+      } else if (cooperativePackage.contributionFrequency === 'weekly') {
+        nextPaymentDate.setDate(nextPaymentDate.getDate() + 7);
+      } else { // bi-weekly
+        nextPaymentDate.setDate(nextPaymentDate.getDate() + 14);
+      }
+      
+      // Add user to package members
+      cooperativePackage.members.push({
+        userId,
+        nextPaymentDate,
+        isActive: true,
+        paymentsMade: 0,
+        amountPaid: 0,
+      });
+      
+      // Add package to user's memberships
+      user.cooperativeMemberships.push({
+        packageId,
+        packageName: cooperativePackage.name,
+        nextPaymentDate,
+        isActive: true,
+        totalAmount: cooperativePackage.targetAmount,
+        paidAmount: 0,
+        contributionAmount: cooperativePackage.contributionAmount,
+        contributionFrequency: cooperativePackage.contributionFrequency,
+        startDate: new Date(),
+        endDate: new Date(new Date().setMonth(new Date().getMonth() + cooperativePackage.duration)),
+      });
+      
+      // Save changes
+      await cooperativePackage.save();
+      await user.save();
+      
+      res.status(200).json({ 
+        message: "✅ Successfully joined cooperative package",
+        package: cooperativePackage
+      });
+    } catch (error) {
+      console.error("Error joining cooperative package:", error);
+      res.status(500).json({ message: "❌ Server Error", error: error.message });
     }
-    
-    // Check if user already joined
-    const existingMember = cooperativePackage.members.find(
-      member => member.userId.toString() === userId
-    );
-    
-    if (existingMember) {
-      return res.status(400).json({ message: "❌ You have already joined this package" });
-    }
-    
-    // Check user's profile completion
-    // const user = await User.findById(userId);
-    // if (!user.profileCompleted) {
-    //   return res.status(400).json({ message: "❌ Please complete your profile first" });
-    // }
-    
-    // Calculate next payment date based on frequency
-    const nextPaymentDate = new Date();
-    if (cooperativePackage.contributionFrequency === 'monthly') {
-      nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
-    } else if (cooperativePackage.contributionFrequency === 'weekly') {
-      nextPaymentDate.setDate(nextPaymentDate.getDate() + 7);
-    } else { // bi-weekly
-      nextPaymentDate.setDate(nextPaymentDate.getDate() + 14);
-    }
-    
-    // Add user to package members
-    cooperativePackage.members.push({
-      userId,
-      nextPaymentDate,
-      isActive: true,
-      paymentsMade: 0,
-      amountPaid: 0,
-    });
-    
-    // Add package to user's memberships
-    user.cooperativeMemberships.push({
-      packageId,
-      packageName: cooperativePackage.name,
-      nextPaymentDate,
-      isActive: true,
-      totalAmount: cooperativePackage.targetAmount,
-      paidAmount: 0,
-      contributionAmount: cooperativePackage.contributionAmount,
-      contributionFrequency: cooperativePackage.contributionFrequency,
-      startDate: new Date(),
-      endDate: new Date(),
-    });
-    
-    // Calculate end date based on duration
-    user.cooperativeMemberships[user.cooperativeMemberships.length - 1].endDate.setMonth(
-      user.cooperativeMemberships[user.cooperativeMemberships.length - 1].startDate.getMonth() + cooperativePackage.duration
-    );
-    
-    // Save changes
-    await cooperativePackage.save();
-    await user.save();
-    
-    res.status(200).json({ 
-      message: "✅ Successfully joined cooperative package",
-      package: cooperativePackage
-    });
-  } catch (error) {
-    res.status(500).json({ message: "❌ Server Error", error: error.message });
-  }
-};
+  };
 
 // @desc    Get user's cooperative contributions
 // @route   GET /api/users/:userId/cooperative-contributions
