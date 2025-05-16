@@ -8,7 +8,7 @@ router.get("/", cooperativeController.getAllCooperativePackages);
 router.get("/:id", cooperativeController.getCooperativePackageById);
 
 // Admin routes
-router.post("/", authMiddleware, cooperativeController.createCooperativePackage);
+router.post("/", cooperativeController.createCooperativePackage);
 router.put("/:id", authMiddleware, cooperativeController.updateCooperativePackage);
 router.delete("/:id", authMiddleware, cooperativeController.deleteCooperativePackage);
 

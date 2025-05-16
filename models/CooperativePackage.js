@@ -25,7 +25,7 @@ const CooperativePackageSchema = new mongoose.Schema(
       default: 'monthly'
     },
     isActive: { type: Boolean, default: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     members: [memberSchema],
   },
   { timestamps: true }

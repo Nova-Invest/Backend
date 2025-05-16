@@ -38,36 +38,36 @@ const getCooperativePackageById = async (req, res) => {
 // @route   POST /api/cooperative-packages
 // @access  Private (Admin)
 const createCooperativePackage = async (req, res) => {
-  try {
-    const { name, description, targetAmount, duration, contributionFrequency } = req.body;
-    
-    // Calculate contribution amount based on frequency
-    let contributionAmount;
-    if (contributionFrequency === 'monthly') {
-      contributionAmount = targetAmount / duration;
-    } else if (contributionFrequency === 'weekly') {
-      contributionAmount = targetAmount / (duration * 4);
-    } else { // bi-weekly
-      contributionAmount = targetAmount / (duration * 2);
+    try {
+      const { name, description, targetAmount, duration, contributionFrequency } = req.body;
+      
+      let contributionAmount;
+      if (contributionFrequency === 'monthly') {
+        contributionAmount = targetAmount / duration;
+      } else if (contributionFrequency === 'weekly') {
+        contributionAmount = targetAmount / (duration * 4);
+      } else { // bi-weekly
+        contributionAmount = targetAmount / (duration * 2);
+      }
+      
+      const newPackage = new CooperativePackage({
+        name,
+        description,
+        targetAmount,
+        duration,
+        contributionAmount,
+        contributionFrequency,
+        currentAmount: 0,
+        // createdBy is now optional
+        ...(req.user?.id && { createdBy: req.user.id }) // Only add if user exists
+      });
+      
+      const savedPackage = await newPackage.save();
+      res.status(201).json(savedPackage);
+    } catch (error) {
+      res.status(500).json({ message: "❌ Server Error", error: error.message });
     }
-    
-    const newPackage = new CooperativePackage({
-      name,
-      description,
-      targetAmount,
-      duration,
-      contributionAmount,
-      contributionFrequency,
-      createdBy: req.user.id,
-      currentAmount: 0,
-    });
-    
-    const savedPackage = await newPackage.save();
-    res.status(201).json(savedPackage);
-  } catch (error) {
-    res.status(500).json({ message: "❌ Server Error", error: error.message });
-  }
-};
+  };
 
 // @desc    Update a cooperative package (Admin only)
 // @route   PUT /api/cooperative-packages/:id
@@ -156,10 +156,10 @@ const joinCooperativePackage = async (req, res) => {
     }
     
     // Check user's profile completion
-    const user = await User.findById(userId);
-    if (!user.profileCompleted) {
-      return res.status(400).json({ message: "❌ Please complete your profile first" });
-    }
+    // const user = await User.findById(userId);
+    // if (!user.profileCompleted) {
+    //   return res.status(400).json({ message: "❌ Please complete your profile first" });
+    // }
     
     // Calculate next payment date based on frequency
     const nextPaymentDate = new Date();
