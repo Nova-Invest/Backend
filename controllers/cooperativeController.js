@@ -312,9 +312,9 @@ const makeCooperativePayment = async (req, res) => {
     }
     
     // Check if payment is due
-    // if (new Date() < new Date(packageMembership.nextPaymentDate)) {
-    //   return res.status(400).json({ message: "❌ Your next payment is not due yet" });
-    // }
+    if (new Date() < new Date(packageMembership.nextPaymentDate)) {
+      return res.status(400).json({ message: "❌ Your next payment is not due yet" });
+    }
     
     // Check if amount matches expected contribution
     if (amount !== cooperativePackage.contributionAmount) {
