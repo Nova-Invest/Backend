@@ -11,7 +11,7 @@ const {
   getUserFoodContributions,
   getFoodContributionById,
   makeFoodPackagePayment
-} = require('../controllers/foodPackageController');
+} = require('../controllers/FoodPackageController');
 
 // Public routes
 router.get('/', getAllFoodPackages);

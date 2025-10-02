@@ -5,7 +5,7 @@ const userRoutes = require('./routes/userRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const investmentPackageRoutes = require('./routes/investmentPackageRoutes'); 
 const cooperativeRoutes = require('./routes/cooperativeRoutes');
-const foodPackageRoutes = require('./routes/foodPackageRoutes'); // Add this line
+const foodPackageRoutes = require('./routes/FoodPackageRoutes'); // Add this line
 
 const app = express();
 app.use(express.json());
