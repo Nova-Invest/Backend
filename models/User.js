@@ -65,7 +65,8 @@ const transactionSchema = new mongoose.Schema({
       "manual_wallet_update",          // Added
       "manual_withdrawable_update",     // Added
       "manual_invested_update",         // Added
-      "manual_cooperative_update"       // Added
+      "manual_cooperative_update",
+      "food_package_payment"    // Added
     ],
     required: true,
   },
