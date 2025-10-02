@@ -218,6 +218,22 @@ const UserSchema = new mongoose.Schema(
     ],
 
     cooperativeMemberships: [cooperativeMembershipSchema],
+    foodContributions: [{
+      contributionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "FoodContribution"
+      },
+      packageName: {
+        type: String
+      },
+      startDate: {
+        type: Date
+      },
+      status: {
+        type: String,
+        enum: ['active', 'completed', 'cancelled']
+      }
+    }],
   },
   { timestamps: true }
 );
