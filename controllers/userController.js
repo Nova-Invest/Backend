@@ -547,6 +547,59 @@ const confirmOTP = async (req, res) => {
   }
 };
 
+/**
+ * @desc Activate user account for 1 year (deduct 5000 Naira from wallet)
+ * @route POST /api/users/activate/:id
+ */
+const activateUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.isActivated) return res.status(400).json({ message: "User already activated" });
+
+    if (user.balances.walletBalance < 5000) {
+      return res.status(400).json({ message: "Insufficient wallet balance for activation" });
+    }
+
+    // Deduct fee
+    user.balances.walletBalance -= 5000;
+
+    // Activate user
+    user.isActivated = true;
+    user.activationDate = new Date();
+    const expiration = new Date(user.activationDate);
+    expiration.setFullYear(expiration.getFullYear() + 1);
+    user.activationExpiration = expiration;
+
+    // Record transaction (amount negative for deduction)
+    user.transactions.push({
+      type: "activation_fee",
+      amount: -5000,
+      date: new Date(),
+      status: "completed",
+      description: "Account activation fee for 1 year",
+      reference: `ACT-${Date.now()}`,
+    });
+
+    await user.save();
+
+    res.status(200).json({
+      message: "User activated successfully for 1 year",
+      user: {
+        _id: user._id,
+        isActivated: user.isActivated,
+        activationDate: user.activationDate,
+        activationExpiration: user.activationExpiration,
+        balances: user.balances,
+      },
+    });
+  } catch (error) {
+    console.error("Error activating user:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -561,4 +614,5 @@ module.exports = {
   pendingWithdrawals,
   generateOTP,
   confirmOTP,
+  activateUser,
 };

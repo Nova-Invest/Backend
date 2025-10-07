@@ -66,7 +66,8 @@ const transactionSchema = new mongoose.Schema({
       "manual_withdrawable_update",     // Added
       "manual_invested_update",         // Added
       "manual_cooperative_update",
-      "food_package_payment"    // Added
+      "food_package_payment",    // Added
+      "activation_fee"  // Added for activation deduction
     ],
     required: true,
   },
@@ -235,6 +236,16 @@ const UserSchema = new mongoose.Schema(
         enum: ['active', 'completed', 'cancelled']
       }
     }],
+    isActivated: { 
+      type: Boolean, 
+      default: false 
+    },
+    activationDate: { 
+      type: Date 
+    },
+    activationExpiration: { 
+      type: Date 
+    },
   },
   { timestamps: true }
 );

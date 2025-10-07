@@ -13,6 +13,7 @@ const {
   pendingWithdrawals,
   generateOTP,
   confirmOTP,
+  activateUser,
 } = require("../controllers/userController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
@@ -34,5 +35,6 @@ router.post("/add-next-of-kin/:id", authMiddleware, addNextOfKin); // Add next o
 router.get("/pending-withdrawals/:id", authMiddleware, pendingWithdrawals); // Add next of kin
 router.post("/get-otp/:id", authMiddleware, generateOTP); // Generate OTP
 router.post("/confirm-otp/:id", authMiddleware, confirmOTP); // Confirmn OTP
+router.post("/activate/:id", authMiddleware, activateUser);
 
 module.exports = router;

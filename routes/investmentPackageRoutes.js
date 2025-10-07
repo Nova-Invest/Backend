@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/authMiddleware');
+const activationMiddleware = require('../middlewares/activationMiddleware')
 const {
   createInvestmentPackage,
   getAllInvestmentPackages,
@@ -18,6 +19,6 @@ router.get('/:id', getInvestmentPackageById);
 router.post('/', authMiddleware, createInvestmentPackage);
 router.put('/:id', authMiddleware, updateInvestmentPackage);
 router.delete('/:id', authMiddleware, deleteInvestmentPackage);
-router.post('/:id/register', authMiddleware, registerUserToPackage);
+router.post('/:id/register',activationMiddleware, authMiddleware, registerUserToPackage);
 
 module.exports = router;
