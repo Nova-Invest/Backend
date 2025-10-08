@@ -16,27 +16,41 @@ const verifyPayment = async (req, res) => {
   }
 
   try {
+    console.log(`Verifying payment with reference: ${reference}`);
+
     // Verify the payment with Paystack
-    const response = await axios.get(
+    const paystackResponse = await axios.get(
       `https://api.paystack.co/transaction/verify/${reference}`,
       {
         headers: {
-          Authorization: `Bearer ${paystackSecretKey}`,
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
         },
       }
     );
 
-    const { status, amount, metadata } = response.data.data;
+    console.log('Paystack response:', paystackResponse.data);
+
+    const { status, amount, metadata, currency } = paystackResponse.data.data;
 
     if (status === "success") {
+      // Validate that we have the required metadata
+      if (!metadata || !metadata.userId) {
+        return res.status(400).json({ message: "User ID not found in payment metadata" });
+      }
+
       // Find the user using the userId from the metadata
       const user = await User.findById(metadata.userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Convert amount from kobo to Naira
-      const amountInNaira = amount / 100;
+      // Convert amount from kobo to Naira (if currency is NGN)
+      let amountInNaira = amount;
+      if (currency === 'NGN') {
+        amountInNaira = amount / 100;
+      }
+
+      console.log(`Updating wallet for user ${user._id} with amount: ${amountInNaira}`);
 
       // Update the user's wallet balance
       user.balances.walletBalance += amountInNaira;
@@ -47,23 +61,49 @@ const verifyPayment = async (req, res) => {
         amount: amountInNaira,
         date: new Date(),
         status: "completed",
+        reference: reference,
+        currency: currency || 'NGN'
       });
 
       // Save the updated user document
       await user.save();
 
-      // Return success response
-      res.status(200).json({ message: "Payment successful", user });
+      console.log(`Wallet updated successfully for user: ${user._id}`);
+
+      // Return success response with updated user
+      return res.status(200).json({ 
+        message: "Payment successful", 
+        user: {
+          _id: user._id,
+          email: user.email,
+          balances: user.balances,
+          transactions: user.transactions
+        }
+      });
     } else {
       // Payment was not successful
-      res.status(400).json({ message: "Payment not successful" });
+      console.log(`Payment not successful. Status: ${status}`);
+      return res.status(400).json({ 
+        message: `Payment not successful. Status: ${status}` 
+      });
     }
   } catch (error) {
     console.error("Error verifying Paystack payment:", error);
-    res.status(500).json({ message: "Error verifying payment" });
+    
+    if (error.response) {
+      console.error('Paystack API response error:', error.response.data);
+      return res.status(500).json({ 
+        message: "Error verifying payment", 
+        error: error.response.data.message || error.message 
+      });
+    }
+    
+    return res.status(500).json({ 
+      message: "Error verifying payment", 
+      error: error.message 
+    });
   }
 };
-
 // Withdrawal
 const createRecipient = async (req, res) => {
   try {
