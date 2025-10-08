@@ -235,7 +235,7 @@ const getFoodContributionById = async (req, res) => {
 
 // @desc    Make payment for food package
 // @route   POST /api/food-packages/payment/:contributionId
-// @access  Private
+// @access  Privates
 const makeFoodPackagePayment = async (req, res) => {
   try {
     const { contributionId } = req.params;
@@ -247,7 +247,7 @@ const makeFoodPackagePayment = async (req, res) => {
       .populate('packageId');
     
     if (!contribution) {
-      return res.status(404).json({ message: '❌ Food contribution not found' });
+      return res.status(404).json({ message: '❌ Food contribution is not found' });
     }
 
     // Verify ownership
