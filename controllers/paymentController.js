@@ -15,20 +15,44 @@ const verifyPayment = async (req, res) => {
     return res.status(400).json({ message: "No reference provided" });
   }
 
+  // Get Paystack secret key from environment
+  const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
+  
+  // Validate the secret key
+  if (!paystackSecretKey) {
+    console.error('Paystack secret key is not configured');
+    return res.status(500).json({ 
+      message: "Payment configuration error", 
+      error: "Server configuration incomplete" 
+    });
+  }
+
+  // Validate key format (should start with sk_live_ or sk_test_)
+  if (!paystackSecretKey.startsWith('sk_live_') && !paystackSecretKey.startsWith('sk_test_')) {
+    console.error('Invalid Paystack key format');
+    return res.status(500).json({ 
+      message: "Payment configuration error", 
+      error: "Invalid API key format" 
+    });
+  }
+
   try {
     console.log(`Verifying payment with reference: ${reference}`);
+    console.log(`Using key: ${paystackSecretKey.substring(0, 10)}...`);
 
     // Verify the payment with Paystack
     const paystackResponse = await axios.get(
       `https://api.paystack.co/transaction/verify/${reference}`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          Authorization: `Bearer ${paystackSecretKey}`,
         },
+        timeout: 30000, // 30 second timeout
       }
     );
 
-    console.log('Paystack response:', paystackResponse.data);
+    console.log('Paystack response status:', paystackResponse.status);
+    console.log('Paystack response data:', paystackResponse.data);
 
     const { status, amount, metadata, currency } = paystackResponse.data.data;
 
@@ -92,9 +116,31 @@ const verifyPayment = async (req, res) => {
     
     if (error.response) {
       console.error('Paystack API response error:', error.response.data);
+      const paystackError = error.response.data;
+      
+      // Handle specific Paystack errors
+      if (paystackError.message === 'Invalid key') {
+        return res.status(500).json({ 
+          message: "Payment configuration error", 
+          error: "Invalid API key provided" 
+        });
+      } else if (paystackError.message === 'Transaction not found') {
+        return res.status(404).json({ 
+          message: "Transaction not found", 
+          error: "Invalid reference number" 
+        });
+      }
+      
       return res.status(500).json({ 
         message: "Error verifying payment", 
-        error: error.response.data.message || error.message 
+        error: paystackError.message || error.message 
+      });
+    }
+    
+    if (error.code === 'ECONNABORTED') {
+      return res.status(408).json({ 
+        message: "Payment verification timeout", 
+        error: "Request took too long" 
       });
     }
     
