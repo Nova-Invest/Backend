@@ -15,9 +15,6 @@ const verifyPayment = async (req, res) => {
     return res.status(400).json({ message: "No reference provided" });
   }
 
-  // Get Paystack secret key from environment
-  const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
-  
   // Validate the secret key
   if (!paystackSecretKey) {
     console.error('Paystack secret key is not configured');
@@ -150,6 +147,7 @@ const verifyPayment = async (req, res) => {
     });
   }
 };
+
 // Withdrawal
 const createRecipient = async (req, res) => {
   try {
@@ -198,7 +196,7 @@ const withdraw = async (req, res) => {
         source: "balance",
         amount: amount * 100, // Convert to kobo
         recipient: recipient_code,
-        reason: "Withdrawal From Growvewst",
+        reason: "Withdrawal From Growvest",
       },
       {
         headers: {
@@ -221,7 +219,7 @@ const withdraw = async (req, res) => {
     let transactionStatus = "pending";
     if (data.status === "success") transactionStatus = "completed";
     else if (data.status === "failed") {
-      return res.status(500).json({ message: "Payment Error", data });
+      return res.status(400).json({ message: "Payment Error", data });
     }
 
     // Update user balance and record transaction
@@ -253,15 +251,15 @@ const withdraw = async (req, res) => {
 
 const finalizeTransfer = async (req, res) => {
   try {
-    const { transfer_code, otp } = req.body;
-    const user = await User.findById(req.params.id);
+    const { transfer_code, otp, id: userId } = req.body;
+    const user = await User.findById(userId || req.params.id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     const response = await axios.post(
-      `https://api.paystack.co/transfer/finalize_transfer/`,
+      `https://api.paystack.co/transfer/finalize_transfer`,
       {
         transfer_code,
         otp,
@@ -274,12 +272,13 @@ const finalizeTransfer = async (req, res) => {
       }
     );
 
-    user.withdrawableBalance = user.withdrawableBalance - amount;
-    user.transactions.push({
-      type: "withdrawal",
-      amount,
-      status: "completed",
-    });
+    // Update the pending transaction status to completed
+    const transactionIndex = user.transactions.findIndex(t => t.transfer_code === transfer_code);
+    if (transactionIndex !== -1) {
+      user.transactions[transactionIndex].status = "completed";
+    }
+
+    await user.save();
 
     res.json(response.data);
   } catch (error) {
@@ -333,22 +332,18 @@ const webhook = async (req, res) => {
     ) {
       const transferCode = event.data.transfer_code;
       const newStatus =
-        event.event === "transfer.success" ? "success" : "failed";
+        event.event === "transfer.success" ? "completed" : "failed";
 
       const user = await User.findOne({
         "transactions.transfer_code": transferCode,
       });
 
       if (user) {
-        await User.updateOne(
-          { "transactions.transfer_code": transferCode },
-          {
-            $set: {
-              "transactions.$.status":
-                newStatus === "success" ? "completed" : "pending",
-            },
-          }
-        );
+        const transactionIndex = user.transactions.findIndex(t => t.transfer_code === transferCode);
+        if (transactionIndex !== -1) {
+          user.transactions[transactionIndex].status = newStatus === "success" ? "completed" : "failed";
+          await user.save();
+        }
       }
     }
 
