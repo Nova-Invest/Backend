@@ -22,7 +22,7 @@ router.get('/:id', getFoodPackageById);
 router.post('/',  createFoodPackage);
 router.put('/:id', authMiddleware, updateFoodPackage);
 router.delete('/:id', authMiddleware, deleteFoodPackage);
-router.post('/:id/purchase',activationMiddleware, authMiddleware, purchaseFoodPackage);
+router.post('/:id/purchase', authMiddleware, activationMiddleware, purchaseFoodPackage);
 router.get('/users/:userId/contributions', authMiddleware, getUserFoodContributions);
 router.get('/contributions/:contributionId', authMiddleware, getFoodContributionById);
 router.post('/payment/:contributionId', authMiddleware, makeFoodPackagePayment);

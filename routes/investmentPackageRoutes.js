@@ -19,6 +19,6 @@ router.get('/:id', getInvestmentPackageById);
 router.post('/', authMiddleware, createInvestmentPackage);
 router.put('/:id', authMiddleware, updateInvestmentPackage);
 router.delete('/:id', authMiddleware, deleteInvestmentPackage);
-router.post('/:id/register',activationMiddleware, authMiddleware, registerUserToPackage);
+router.post('/:id/register', authMiddleware, activationMiddleware, registerUserToPackage);
 
 module.exports = router;
