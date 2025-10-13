@@ -554,9 +554,9 @@ const getOTP = async (req, res) => {
       });
     }
 
-    // Store OTP with expiry (5 minutes)
+    // Store OTP with expiry (10 minutes)
     user.tempOTP = otp;
-    user.otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     
     await user.save();
     console.log(`[getOTP] OTP saved to database for user: ${userId}`);
@@ -611,7 +611,8 @@ const confirmOTP = async (req, res) => {
     }
 
     // Check if OTP is expired
-    if (user.otpExpiry && new Date() > user.otpExpiry) {
+    const currentTime = new Date();
+    if (user.otpExpiry && currentTime > new Date(user.otpExpiry)) {
       // Clear expired OTP
       user.tempOTP = undefined;
       user.otpExpiry = undefined;
@@ -620,9 +621,9 @@ const confirmOTP = async (req, res) => {
       return res.status(400).json({ message: "OTP has expired. Please request a new one." });
     }
 
-    // Verify OTP (case insensitive, trim whitespace)
-    const storedOTP = user.tempOTP.toString().trim();
-    const providedOTP = otp.toString().trim();
+    // Verify OTP
+    const storedOTP = user.tempOTP.toString();
+    const providedOTP = otp.toString();
 
     console.log(`[confirmOTP] Comparing - Stored: "${storedOTP}", Provided: "${providedOTP}"`);
 

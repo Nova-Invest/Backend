@@ -14,36 +14,20 @@ const sendOTP = async (userEmail, otp) => {
     throw new Error(errMsg);
   }
 
-  let transporter;
-  try {
-    console.log(`[sendOTP] Creating transporter...`);
-    transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: emailUser,
-        pass: emailPass,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
-
-    console.log(`[sendOTP] Verifying transporter connection...`);
-    await transporter.verify();
-    console.log(`[sendOTP] SMTP connection verified successfully`);
-
-  } catch (verifyError) {
-    console.error(`[sendOTP] SMTP verification failed:`, verifyError.message);
-    throw new Error(`Email service configuration error: ${verifyError.message}`);
-  }
+  // Create transporter
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: emailUser,
+      pass: emailPass,
+    },
+  });
 
   const mailOptions = {
     from: `"Growvest" <${emailUser}>`,
     to: userEmail,
     subject: "Your Withdrawal OTP Code - Growvest",
-    text: `Your OTP code for withdrawal is: ${otp}. This code will expire in 5 minutes. Do not share this code with anyone.`,
+    text: `Your OTP code for withdrawal is: ${otp}. This code will expire in 10 minutes. Do not share this code with anyone.`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #1a365d;">Growvest Withdrawal Verification</h2>
@@ -51,7 +35,7 @@ const sendOTP = async (userEmail, otp) => {
         <div style="background: #f8f9fa; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #1a365d; margin: 20px 0;">
           ${otp}
         </div>
-        <p>This OTP will expire in <strong>5 minutes</strong>.</p>
+        <p>This OTP will expire in <strong>10 minutes</strong>.</p>
         <p style="color: #666; font-size: 14px;">
           <strong>Security Tip:</strong> Never share this code with anyone. Growvest will never ask for your OTP.
         </p>
