@@ -11,7 +11,7 @@ const {
   adminLogin,
   addNextOfKin,
   pendingWithdrawals,
-  generateOTP,
+  getOTP,
   confirmOTP,
   activateUser,
 } = require("../controllers/userController");
@@ -33,8 +33,8 @@ router.put("/edit-user/:id", authMiddleware, editUser);
 router.post("/add-user", authMiddleware, addUser);
 router.post("/add-next-of-kin/:id", authMiddleware, addNextOfKin); // Add next of kin
 router.get("/pending-withdrawals/:id", authMiddleware, pendingWithdrawals); // Add next of kin
-router.post("/get-otp/:id", authMiddleware, generateOTP); // Generate OTP
-router.post("/confirm-otp/:id", authMiddleware, confirmOTP); // Confirmn OTP
+router.post("/get-otp/:id", authMiddleware, getOTP); // Or whatever your auth middleware is
+router.post("/confirm-otp/:id", authMiddleware, confirmOTP);
 router.post("/activate/:id", authMiddleware, activateUser);
 
 module.exports = router;

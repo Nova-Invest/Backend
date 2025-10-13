@@ -499,54 +499,76 @@ const pendingWithdrawals = async (req, res) => {
  * @desc Generate OTP
  * @route POST /api/get-otp
  */
-const generateOTP = async (req, res) => {
+const getOTP = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const userId = req.params.id;
 
-    const otp = await sendOTP(
-      process.env.Admin_Email,
-      process.env.Admin_Password,
-      user.email
-    );
-
-    if (!otp) return res.status(400).json({ message: "OTP not generated" });
-
-    // Save OTP to db
-    user.transactionOTP = otp;
-    await user.save();
-
-    res.status(201).json({
-      message: "OTP Successfully Generated",
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-/**
- * @desc Confirm OTP
- * @route POST /api/confirm-otp
- */
-const confirmOTP = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    const { otp } = req.body;
-
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (user.transactionOTP !== otp) {
-      return res.status(400).json({ message: "Invalid OTP" });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
     }
 
-    res.status(200).json({
-      message: "OTP Successfully Confirmed",
-    });
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Send OTP via email
+    const otp = await sendOTP(user.email);
+
+    // Store OTP temporarily in user document (with 5-min expiry)
+    user.tempOTP = otp;
+    user.otpExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes
+    await user.save();
+
+    console.log(`OTP stored for user ${userId}`); // Debug log
+
+    res.status(200).json({ message: "OTP sent successfully to your email" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error sending OTP:", error);
+    res.status(500).json({ message: "Failed to send OTP. Please try again." });
   }
 };
 
+const confirmOTP = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { otp } = req.body;
+
+    if (!otp || otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+      return res.status(400).json({ message: "OTP must be 6 digits" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check OTP validity
+    if (!user.tempOTP || user.tempOTP !== otp) {
+      return res.status(400).json({ message: "Incorrect OTP" });
+    }
+
+    if (Date.now() > user.otpExpiry) {
+      return res.status(400).json({ message: "OTP expired. Request a new one." });
+    }
+
+    // Clear OTP on success
+    user.tempOTP = undefined;
+    user.otpExpiry = undefined;
+    await user.save();
+
+    console.log(`OTP confirmed for user ${userId}`); // Debug log
+
+    res.status(200).json({ message: "OTP confirmed successfully" });
+  } catch (error) {
+    console.error("Error confirming OTP:", error);
+    res.status(500).json({ message: "Failed to confirm OTP" });
+  }
+};
 /**
  * @desc Activate user account for 1 year (deduct 5000 Naira from wallet)
  * @route POST /api/users/activate/:id
@@ -612,7 +634,7 @@ module.exports = {
   adminLogin,
   addNextOfKin,
   pendingWithdrawals,
-  generateOTP,
+  getOTP,
   confirmOTP,
   activateUser,
 };

@@ -2,53 +2,53 @@ const mongoose = require("mongoose");
 
 // Define the cooperative membership schema
 const cooperativeMembershipSchema = new mongoose.Schema({
-  packageId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: "CooperativePackage", 
-    required: true 
+  packageId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CooperativePackage",
+    required: true
   },
-  packageName: { 
-    type: String, 
-    required: true 
+  packageName: {
+    type: String,
+    required: true
   },
-  startDate: { 
-    type: Date, 
-    default: Date.now 
+  startDate: {
+    type: Date,
+    default: Date.now
   },
-  endDate: { 
-    type: Date 
+  endDate: {
+    type: Date
   },
-  nextPaymentDate: { 
-    type: Date, 
-    required: true 
+  nextPaymentDate: {
+    type: Date,
+    required: true
   },
-  isActive: { 
-    type: Boolean, 
-    default: true 
+  isActive: {
+    type: Boolean,
+    default: true
   },
-  totalAmount: { 
-    type: Number, 
-    required: true 
+  totalAmount: {
+    type: Number,
+    required: true
   },
-  paidAmount: { 
-    type: Number, 
-    default: 0 
+  paidAmount: {
+    type: Number,
+    default: 0
   },
-  contributionAmount: { 
-    type: Number, 
-    required: true 
+  contributionAmount: {
+    type: Number,
+    required: true
   },
-  contributionFrequency: { 
-    type: String, 
+  contributionFrequency: {
+    type: String,
     enum: ['weekly', 'bi-weekly', 'monthly'],
-    required: true 
+    required: true
   },
-  paymentsMade: { 
-    type: Number, 
-    default: 0 
+  paymentsMade: {
+    type: Number,
+    default: 0
   },
-  lastPaymentDate: { 
-    type: Date 
+  lastPaymentDate: {
+    type: Date
   },
 }, { _id: false });
 
@@ -57,9 +57,9 @@ const transactionSchema = new mongoose.Schema({
   type: {
     type: String,
     enum: [
-      "withdrawal", 
-      "fund_wallet", 
-      "investment", 
+      "withdrawal",
+      "fund_wallet",
+      "investment",
       "cooperative_payment",
       "cooperative_withdrawal",
       "manual_wallet_update",          // Added
@@ -71,21 +71,21 @@ const transactionSchema = new mongoose.Schema({
     ],
     required: true,
   },
-  amount: { 
-    type: Number, 
-    required: true 
+  amount: {
+    type: Number,
+    required: true
   },
-  date: { 
-    type: Date, 
-    default: Date.now 
+  date: {
+    type: Date,
+    default: Date.now
   },
   status: {
     type: String,
     enum: ["pending", "completed", "failed"],
     default: "pending",
   },
-  transfer_code: { 
-    type: String 
+  transfer_code: {
+    type: String
   },
   reference: {
     type: String
@@ -93,128 +93,133 @@ const transactionSchema = new mongoose.Schema({
   description: {
     type: String
   },
-  packageId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: "CooperativePackage" 
+  packageId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CooperativePackage"
   },
-  packageName: { 
-    type: String 
+  packageName: {
+    type: String
   },
 }, { _id: false, timestamps: true });
 
 const UserSchema = new mongoose.Schema(
   {
-    firstName: { 
-      type: String, 
-      required: true 
+    firstName: {
+      type: String,
+      required: true
     },
-    lastName: { 
-      type: String, 
-      required: true 
+    lastName: {
+      type: String,
+      required: true
     },
-    phoneNumber: { 
-      type: String, 
-      required: true 
+    phoneNumber: {
+      type: String,
+      required: true
     },
-    email: { 
-      type: String, 
-      required: true, 
-      unique: true 
+    email: {
+      type: String,
+      required: true,
+      unique: true
     },
-    password: { 
-      type: String, 
-      required: true 
+    password: {
+      type: String,
+      required: true
     },
-    token: { 
-      type: String 
+    token: {
+      type: String
     },
-    profileCompleted: { 
-      type: Boolean, 
-      default: false 
+    profileCompleted: {
+      type: Boolean,
+      default: false
     },
-    transactionOTP: { 
-      type: String 
+    tempOTP: {
+      type: String,
+      default: undefined,
+    },
+    otpExpiry: {
+      type: Date,
+      default: undefined,
     },
 
     profile: {
-      profilePicture: { 
-        type: String 
+      profilePicture: {
+        type: String
       },
-      dob: { 
-        type: Date 
+      dob: {
+        type: Date
       },
-      nin: { 
-        type: String 
+      nin: {
+        type: String
       },
-      address: { 
-        type: String 
+      address: {
+        type: String
       },
     },
 
     transactions: [transactionSchema],
 
     balances: {
-      investedBalance: { 
-        type: Number, 
-        default: 0 
+      investedBalance: {
+        type: Number,
+        default: 0
       },
-      withdrawableBalance: { 
-        type: Number, 
-        default: 0 
+      withdrawableBalance: {
+        type: Number,
+        default: 0
       },
-      walletBalance: { 
-        type: Number, 
-        default: 0 
+      walletBalance: {
+        type: Number,
+        default: 0
       },
-      cooperativeBalance: { 
-        type: Number, 
-        default: 0 
+      cooperativeBalance: {
+        type: Number,
+        default: 0
       }
     },
 
     nextOfKin: {
-      fullName: { 
-        type: String 
+      fullName: {
+        type: String
       },
-      relationship: { 
-        type: String 
+      relationship: {
+        type: String
       },
-      phoneNumber: { 
-        type: String 
+      phoneNumber: {
+        type: String
       },
     },
 
     bankDetails: {
-      accountName: { 
-        type: String 
+      accountName: {
+        type: String
       },
-      accountNumber: { 
-        type: String 
+      accountNumber: {
+        type: String
       },
-      bankName: { 
-        type: String 
+      bankName: {
+        type: String
       },
     },
 
     investmentPackage: [
       {
-        name: { 
-          type: String 
+        name: {
+          type: String
         },
-        startDate: { 
-          type: Date 
+        startDate: {
+          type: Date
         },
-        maturityDate: { 
-          type: Date 
+        maturityDate: {
+          type: Date
         },
-        amountInvested: { 
-          type: Number 
+        amountInvested: {
+          type: Number
         },
-        interestRate: { 
-          type: Number 
+        interestRate: {
+          type: Number
         },
-        duration: { 
-          type: String 
+        duration: {
+          type: String
         },
       },
     ],
@@ -236,15 +241,15 @@ const UserSchema = new mongoose.Schema(
         enum: ['active', 'completed', 'cancelled']
       }
     }],
-    isActivated: { 
-      type: Boolean, 
-      default: false 
+    isActivated: {
+      type: Boolean,
+      default: false
     },
-    activationDate: { 
-      type: Date 
+    activationDate: {
+      type: Date
     },
-    activationExpiration: { 
-      type: Date 
+    activationExpiration: {
+      type: Date
     },
   },
   { timestamps: true }

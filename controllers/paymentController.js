@@ -208,6 +208,8 @@ const withdraw = async (req, res) => {
 
     const { status, message, data } = response.data;
 
+    console.log("Paystack transfer response:", response.data); // Debug log
+
     if (!status) {
       return res.status(500).json({
         message: message || "Payment transfer failed",
@@ -229,6 +231,8 @@ const withdraw = async (req, res) => {
       amount,
       status: transactionStatus,
       transfer_code: data.transfer_code || "None",
+      date: new Date(),
+      reference: data.reference || "N/A",
     });
 
     await user.save();
