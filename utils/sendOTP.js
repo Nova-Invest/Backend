@@ -1,28 +1,77 @@
-const { generateOTP } = require("./generateOTP");
 const nodemailer = require("nodemailer");
 
-const sendOTP = async (userEmail) => {
-  const transporter = nodemailer.createTransporter({
-    service: "Gmail",
-    auth: {
-      user: process.env.EMAIL_USER || "nonreply.growvest@gmail.com",
-      pass: process.env.EMAIL_PASS || "sypmgukwirtcujfn",
-    },
-  });
+const sendOTP = async (userEmail, otp) => {
+  console.log(`[sendOTP] Starting for email: ${userEmail}, OTP: ${otp}`);
+  
+  const emailUser = process.env.EMAIL_USER || "nonreply.growvest@gmail.com";
+  const emailPass = process.env.EMAIL_PASS || "sypmgukwirtcujfn";
 
-  const otp = generateOTP(6);
+  console.log(`[sendOTP] Using email: ${emailUser}`);
+
+  if (!emailUser || !emailPass) {
+    const errMsg = "Email credentials not configured properly";
+    console.error(`[sendOTP] ${errMsg}`);
+    throw new Error(errMsg);
+  }
+
+  let transporter;
+  try {
+    console.log(`[sendOTP] Creating transporter...`);
+    transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: emailUser,
+        pass: emailPass,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    console.log(`[sendOTP] Verifying transporter connection...`);
+    await transporter.verify();
+    console.log(`[sendOTP] SMTP connection verified successfully`);
+
+  } catch (verifyError) {
+    console.error(`[sendOTP] SMTP verification failed:`, verifyError.message);
+    throw new Error(`Email service configuration error: ${verifyError.message}`);
+  }
 
   const mailOptions = {
-    from: process.env.EMAIL_USER || "thegrowvest@gmail.com",
+    from: `"Growvest" <${emailUser}>`,
     to: userEmail,
-    subject: "Your OTP Code - Growvest",
-    text: `Your OTP code is ${otp}. It expires in 5 minutes. Do not share it.`,
-    html: `<p>Your OTP code is <strong>${otp}</strong>. It expires in 5 minutes.</p>`,
+    subject: "Your Withdrawal OTP Code - Growvest",
+    text: `Your OTP code for withdrawal is: ${otp}. This code will expire in 5 minutes. Do not share this code with anyone.`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #1a365d;">Growvest Withdrawal Verification</h2>
+        <p>Your One-Time Password (OTP) for withdrawal is:</p>
+        <div style="background: #f8f9fa; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #1a365d; margin: 20px 0;">
+          ${otp}
+        </div>
+        <p>This OTP will expire in <strong>5 minutes</strong>.</p>
+        <p style="color: #666; font-size: 14px;">
+          <strong>Security Tip:</strong> Never share this code with anyone. Growvest will never ask for your OTP.
+        </p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+        <p style="color: #999; font-size: 12px;">
+          If you didn't request this OTP, please ignore this email or contact support immediately.
+        </p>
+      </div>
+    `,
   };
 
-  await transporter.sendMail(mailOptions);
-  console.log(`OTP ${otp} sent to ${userEmail}`); // Debug log
-  return otp;
+  try {
+    console.log(`[sendOTP] Sending email to: ${userEmail}`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`[sendOTP] Email sent successfully: Message ID ${info.messageId}`);
+    return true;
+  } catch (sendError) {
+    console.error(`[sendOTP] Email send failed:`, sendError.message);
+    throw new Error(`Failed to send email: ${sendError.message}`);
+  }
 };
 
 module.exports = { sendOTP };

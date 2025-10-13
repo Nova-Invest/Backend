@@ -2,6 +2,7 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { sendOTP } = require("../utils/sendOTP");
+const mongoose = require("mongoose");
 require("dotenv").config();
 
 /**
@@ -499,74 +500,155 @@ const pendingWithdrawals = async (req, res) => {
  * @desc Generate OTP
  * @route POST /api/get-otp
  */
+/**
+ * @desc Generate OTP
+ * @route POST /api/users/get-otp/:id
+ */
+// Add this helper function at the top
+const generateOTP = (length) => {
+  const digits = "0123456789";
+  let otp = "";
+  for (let i = 0; i < length; i++) {
+    otp += digits[Math.floor(Math.random() * 10)];
+  }
+  return otp;
+};
+
+/**
+ * @desc Generate OTP
+ * @route POST /api/users/get-otp/:id
+ */
 const getOTP = async (req, res) => {
   try {
     const userId = req.params.id;
+    console.log(`[getOTP] Starting for userId: ${userId}`);
 
+    // Validate user ID
     if (!mongoose.Types.ObjectId.isValid(userId)) {
+      console.log(`[getOTP] Invalid user ID: ${userId}`);
       return res.status(400).json({ message: "Invalid user ID" });
     }
 
+    // Fetch user
     const user = await User.findById(userId);
     if (!user) {
+      console.log(`[getOTP] User not found: ${userId}`);
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Send OTP via email
-    const otp = await sendOTP(user.email);
+    console.log(`[getOTP] Found user: ${user.email}`);
 
-    // Store OTP temporarily in user document (with 5-min expiry)
+    // Generate OTP
+    const otp = generateOTP(6);
+    console.log(`[getOTP] Generated OTP: ${otp}`);
+
+    try {
+      // Send OTP via email
+      console.log(`[getOTP] Attempting to send OTP to: ${user.email}`);
+      await sendOTP(user.email, otp);
+      console.log(`[getOTP] OTP sent successfully`);
+    } catch (emailError) {
+      console.error(`[getOTP] Email sending failed:`, emailError);
+      return res.status(500).json({ 
+        message: "Failed to send OTP email. Please try again." 
+      });
+    }
+
+    // Store OTP with expiry (5 minutes)
     user.tempOTP = otp;
-    user.otpExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes
+    user.otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    
     await user.save();
+    console.log(`[getOTP] OTP saved to database for user: ${userId}`);
 
-    console.log(`OTP stored for user ${userId}`); // Debug log
+    res.status(200).json({ 
+      message: "OTP sent successfully to your email",
+      success: true 
+    });
 
-    res.status(200).json({ message: "OTP sent successfully to your email" });
   } catch (error) {
-    console.error("Error sending OTP:", error);
-    res.status(500).json({ message: "Failed to send OTP. Please try again." });
+    console.error("[getOTP] Unexpected error:", error);
+    res.status(500).json({ 
+      message: "Failed to generate OTP. Please try again.",
+      error: error.message 
+    });
   }
 };
 
+/**
+ * @desc Confirm OTP
+ * @route POST /api/users/confirm-otp/:id
+ */
 const confirmOTP = async (req, res) => {
   try {
     const userId = req.params.id;
     const { otp } = req.body;
 
-    if (!otp || otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+    console.log(`[confirmOTP] Starting for userId: ${userId}, OTP: ${otp}`);
+
+    // Input validation
+    if (!otp || typeof otp !== 'string' || otp.length !== 6) {
+      console.log(`[confirmOTP] Invalid OTP format: ${otp}`);
       return res.status(400).json({ message: "OTP must be 6 digits" });
     }
 
+    // Validate user ID
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
 
+    // Fetch user with OTP data
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check OTP validity
-    if (!user.tempOTP || user.tempOTP !== otp) {
+    console.log(`[confirmOTP] User found, stored OTP: ${user.tempOTP}, expiry: ${user.otpExpiry}`);
+
+    // Check if OTP exists
+    if (!user.tempOTP) {
+      return res.status(400).json({ message: "No OTP requested. Please request a new OTP." });
+    }
+
+    // Check if OTP is expired
+    if (user.otpExpiry && new Date() > user.otpExpiry) {
+      // Clear expired OTP
+      user.tempOTP = undefined;
+      user.otpExpiry = undefined;
+      await user.save();
+      
+      return res.status(400).json({ message: "OTP has expired. Please request a new one." });
+    }
+
+    // Verify OTP (case insensitive, trim whitespace)
+    const storedOTP = user.tempOTP.toString().trim();
+    const providedOTP = otp.toString().trim();
+
+    console.log(`[confirmOTP] Comparing - Stored: "${storedOTP}", Provided: "${providedOTP}"`);
+
+    if (storedOTP !== providedOTP) {
+      console.log(`[confirmOTP] OTP mismatch`);
       return res.status(400).json({ message: "Incorrect OTP" });
     }
 
-    if (Date.now() > user.otpExpiry) {
-      return res.status(400).json({ message: "OTP expired. Request a new one." });
-    }
+    console.log(`[confirmOTP] OTP matched successfully`);
 
-    // Clear OTP on success
+    // Clear OTP after successful verification
     user.tempOTP = undefined;
     user.otpExpiry = undefined;
     await user.save();
 
-    console.log(`OTP confirmed for user ${userId}`); // Debug log
+    res.status(200).json({ 
+      message: "OTP verified successfully",
+      success: true 
+    });
 
-    res.status(200).json({ message: "OTP confirmed successfully" });
   } catch (error) {
-    console.error("Error confirming OTP:", error);
-    res.status(500).json({ message: "Failed to confirm OTP" });
+    console.error("[confirmOTP] Unexpected error:", error);
+    res.status(500).json({ 
+      message: "Failed to verify OTP. Please try again.",
+      error: error.message 
+    });
   }
 };
 /**
