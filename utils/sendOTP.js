@@ -5,8 +5,8 @@ const sendOTP = async (userEmail) => {
   const transporter = nodemailer.createTransporter({
     service: "Gmail",
     auth: {
-      user: process.env.EMAIL_USER || "thegrowvest@gmail.com",
-      pass: process.env.EMAIL_PASS || "qwwfmuobfmqyjlgc",
+      user: process.env.EMAIL_USER || "nonreply.growvest@gmail.com",
+      pass: process.env.EMAIL_PASS || "sypmgukwirtcujfn",
     },
   });
 
