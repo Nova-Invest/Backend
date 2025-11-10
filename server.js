@@ -6,6 +6,8 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const investmentPackageRoutes = require('./routes/investmentPackageRoutes'); 
 const cooperativeRoutes = require('./routes/cooperativeRoutes');
 const foodPackageRoutes = require('./routes/FoodPackageRoutes'); // Add this line
+const housingRoutes = require('./routes/housingRoutes');
+const householdRoutes = require('./routes/householdRoutes');
 
 const app = express();
 app.use(express.json());
@@ -22,6 +24,8 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/investment-packages', investmentPackageRoutes); 
 app.use('/api/cooperative', cooperativeRoutes);
 app.use('/api/food-packages', foodPackageRoutes); // Add this line
+app.use('/api/housing', housingRoutes);
+app.use('/api/household', householdRoutes);
 
 // Start Server
 const PORT = process.env.PORT || 8000;
