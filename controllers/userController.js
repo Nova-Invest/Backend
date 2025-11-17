@@ -32,7 +32,7 @@ const registerUser = async (req, res) => {
       lastName,
       phoneNumber,
       email,
-      password,
+      password: hashedPassword,
       token, // Save token in user document
     });
 
