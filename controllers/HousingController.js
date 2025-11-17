@@ -1,23 +1,18 @@
-// controllers/HousingController.js
+// controllers/housingController.js
 const HousingPackage = require('../models/HousingPackage');
 const HousingContribution = require('../models/HousingContribution');
 const User = require('../models/User');
 
-// @desc    Get all active housing packages
-// @route   GET /api/housing
-// @access  Public
+// Get all active housing packages
 const getAllHousingPackages = async (req, res) => {
   try {
-    const packages = await HousingPackage.find({ isActive: true });
+    const packages = await HousingPackage.find({ isActive: true }).select('-__v');
     res.status(200).json(packages);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
 
-// @desc    Get single housing package
-// @route   GET /api/housing/:id
-// @access  Public
 const getHousingPackageById = async (req, res) => {
   try {
     const pkg = await HousingPackage.findById(req.params.id);
@@ -28,9 +23,7 @@ const getHousingPackageById = async (req, res) => {
   }
 };
 
-// @desc    Create housing package (Admin)
-// @route   POST /api/housing
-// @access  Private (Admin)
+// Admin routes
 const createHousingPackage = async (req, res) => {
   try {
     const { name, description, price, image } = req.body;
@@ -42,9 +35,6 @@ const createHousingPackage = async (req, res) => {
   }
 };
 
-// @desc    Update housing package (Admin)
-// @route   PUT /api/housing/:id
-// @access  Private (Admin)
 const updateHousingPackage = async (req, res) => {
   try {
     const updated = await HousingPackage.findByIdAndUpdate(
@@ -59,9 +49,6 @@ const updateHousingPackage = async (req, res) => {
   }
 };
 
-// @desc    Delete housing package (Admin)
-// @route   DELETE /api/housing/:id
-// @access  Private (Admin)
 const deleteHousingPackage = async (req, res) => {
   try {
     const deleted = await HousingPackage.findByIdAndDelete(req.params.id);
@@ -72,29 +59,28 @@ const deleteHousingPackage = async (req, res) => {
   }
 };
 
-// @desc    Purchase housing package
-// @route   POST /api/housing/:id/purchase
-// @access  Private (Authenticated & Activated)
+// Purchase housing package
 const purchaseHousingPackage = async (req, res) => {
   try {
     const { repaymentYears, firstPaymentAmount } = req.body;
     const packageId = req.params.id;
     const userId = req.user.id;
 
-    // Validate repayment years
     if (!repaymentYears || repaymentYears < 1 || repaymentYears > 30) {
-      return res.status(400).json({ message: 'Repayment period must be 1–30 years' });
+      return res.status(400).json({ message: 'Repayment period must be between 1 and 30 years' });
     }
 
     const housingPackage = await HousingPackage.findById(packageId);
-    if (!housingPackage) return res.status(404).json({ message: 'Housing package not found' });
+    if (!housingPackage || !housingPackage.isActive) {
+      return res.status(404).json({ message: 'Housing package not found or inactive' });
+    }
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     if (user.balances.walletBalance < firstPaymentAmount) {
       return res.status(400).json({
-        message: 'Insufficient wallet balance',
+        message: 'Insufficient wallet balance for first payment',
         required: firstPaymentAmount,
         available: user.balances.walletBalance
       });
@@ -123,19 +109,18 @@ const purchaseHousingPackage = async (req, res) => {
       status: 'completed'
     });
 
-    // Deduct from wallet
     user.balances.walletBalance -= firstPaymentAmount;
 
-    // Record transaction
     user.transactions.push({
-      type: 'housing_payment',
+      type: "housing_payment",
       amount: firstPaymentAmount,
-      status: 'completed',
-      description: `First payment for ${housingPackage.name} housing`
+      status: "completed",
+      description: `First payment for ${housingPackage.name} housing package`
     });
 
-    // Track in user profile
-    user.housingContributions = user.housingContributions || [];
+    // Ensure array exists
+    if (!user.housingContributions) user.housingContributions = [];
+
     user.housingContributions.push({
       contributionId: contribution._id,
       packageName: housingPackage.name,
@@ -150,23 +135,22 @@ const purchaseHousingPackage = async (req, res) => {
     res.status(201).json({
       message: 'Housing package purchased successfully',
       contribution,
-      user: { walletBalance: user.balances.walletBalance }
+      walletBalance: user.balances.walletBalance
     });
+
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
 
-// @desc    Get user's housing contributions
-// @route   GET /api/housing/users/:userId/contributions
-// @access  Private
 const getUserHousingContributions = async (req, res) => {
   try {
     const { userId } = req.params;
     if (req.user.id !== userId) return res.status(403).json({ message: 'Access denied' });
 
     const contributions = await HousingContribution.find({ userId })
-      .populate('packageId')
+      .populate('packageId', 'name price image description')
       .sort({ createdAt: -1 });
 
     res.status(200).json(contributions);
@@ -175,9 +159,6 @@ const getUserHousingContributions = async (req, res) => {
   }
 };
 
-// @desc    Get single contribution
-// @route   GET /api/housing/contributions/:contributionId
-// @access  Private
 const getHousingContributionById = async (req, res) => {
   try {
     const contribution = await HousingContribution.findById(req.params.contributionId)
@@ -195,9 +176,6 @@ const getHousingContributionById = async (req, res) => {
   }
 };
 
-// @desc    Make monthly payment
-// @route   POST /api/housing/payment/:contributionId
-// @access  Private
 const makeHousingPayment = async (req, res) => {
   try {
     const { amount } = req.body;
@@ -208,7 +186,7 @@ const makeHousingPayment = async (req, res) => {
     if (!contribution) return res.status(404).json({ message: 'Contribution not found' });
     if (contribution.userId.toString() !== userId) return res.status(403).json({ message: 'Access denied' });
     if (!contribution.isActive || contribution.isCompleted) {
-      return res.status(400).json({ message: 'This housing plan is already completed' });
+      return res.status(400).json({ message: 'This housing contribution is already completed or inactive' });
     }
 
     const user = await User.findById(userId);
@@ -220,17 +198,9 @@ const makeHousingPayment = async (req, res) => {
       });
     }
 
-    // Update contribution
     contribution.paidAmount += amount;
-    contribution.remainingAmount = contribution.totalAmount - contribution.paidAmount;
     contribution.currentMonth += 1;
     contribution.nextPaymentDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-    if (contribution.remainingAmount <= 0) {
-      contribution.isCompleted = true;
-      contribution.isActive = false;
-      contribution.endDate = new Date();
-    }
 
     contribution.paymentHistory.push({
       amount,
@@ -239,17 +209,22 @@ const makeHousingPayment = async (req, res) => {
       status: 'completed'
     });
 
-    // Update user
     user.balances.walletBalance -= amount;
     user.transactions.push({
       type: 'housing_payment',
       amount,
       status: 'completed',
-      description: `Monthly payment for ${contribution.packageId.name}`
+      description: `Monthly payment for ${contribution.packageId.name} housing`
     });
 
-    if (contribution.isCompleted) {
-      const userContrib = user.housingContributions.id(contribution._id);
+    if (contribution.remainingAmount <= amount) {
+      contribution.isCompleted = true;
+      contribution.isActive = false;
+      contribution.endDate = new Date();
+
+      const userContrib = user.housingContributions.find(
+        c => c.contributionId.toString() === contributionId
+      );
       if (userContrib) userContrib.status = 'completed';
     }
 
@@ -259,9 +234,11 @@ const makeHousingPayment = async (req, res) => {
     res.status(200).json({
       message: 'Payment successful',
       contribution,
-      user: { walletBalance: user.balances.walletBalance }
+      walletBalance: user.balances.walletBalance
     });
+
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };

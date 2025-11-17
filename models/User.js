@@ -67,7 +67,9 @@ const transactionSchema = new mongoose.Schema({
       "manual_invested_update",         // Added
       "manual_cooperative_update",
       "food_package_payment",    // Added
-      "activation_fee"  // Added for activation deduction
+      "activation_fee",  // Added for activation deduction
+      "housing_payment",
+      "household_bundle_payment"
     ],
     required: true,
   },
@@ -239,6 +241,40 @@ const UserSchema = new mongoose.Schema(
       status: {
         type: String,
         enum: ['active', 'completed', 'cancelled']
+      }
+    }],
+    housingContributions: [{
+      contributionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "HousingContribution"
+      },
+      packageName: {
+        type: String
+      },
+      startDate: {
+        type: Date
+      },
+      status: {
+        type: String,
+        enum: ['active', 'completed', 'cancelled'],
+        default: 'active'
+      }
+    }],
+    householdContributions: [{
+      contributionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "HouseholdContribution"
+      },
+      bundleName: {
+        type: String
+      },
+      startDate: {
+        type: Date
+      },
+      status: {
+        type: String,
+        enum: ['active', 'completed', 'cancelled'],
+        default: 'active'
       }
     }],
     isActivated: {

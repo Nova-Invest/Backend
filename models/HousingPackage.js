@@ -1,5 +1,5 @@
 // models/HousingPackage.js
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const housingPackageSchema = new mongoose.Schema({
   name: {
@@ -8,7 +8,8 @@ const housingPackageSchema = new mongoose.Schema({
     trim: true
   },
   description: {
-    type: String
+    type: String,
+    required: true
   },
   price: {
     type: Number,
@@ -23,4 +24,4 @@ const housingPackageSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('HousingPackage', housingPackageSchema);
+module.exports = mongoose.model("HousingPackage", housingPackageSchema);

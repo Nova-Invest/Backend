@@ -1,5 +1,5 @@
 // models/HousingContribution.js
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const paymentHistorySchema = new mongoose.Schema({
   amount: { type: Number, required: true },
@@ -12,12 +12,12 @@ const paymentHistorySchema = new mongoose.Schema({
 const housingContributionSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: "User",
     required: true
   },
   packageId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'HousingPackage',
+    ref: "HousingPackage",
     required: true
   },
   repaymentYears: {
@@ -69,14 +69,18 @@ const housingContributionSchema = new mongoose.Schema({
   totalMonths: {
     type: Number,
     required: true
-  } // = repaymentYears * 12
+  }
 }, { timestamps: true });
 
-// Auto-calculate remaining & completion
-housingContributionSchema.pre('save', function (next) {
+// Auto-calculate remaining amount and completion status
+housingContributionSchema.pre('save', function(next) {
   this.remainingAmount = this.totalAmount - this.paidAmount;
   this.isCompleted = this.remainingAmount <= 0;
+  if (this.isCompleted) {
+    this.isActive = false;
+    this.endDate = this.endDate || new Date();
+  }
   next();
 });
 
-module.exports = mongoose.model('HousingContribution', housingContributionSchema);
+module.exports = mongoose.model("HousingContribution", housingContributionSchema);
