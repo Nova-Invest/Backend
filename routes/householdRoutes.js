@@ -23,7 +23,8 @@ router.put('/:id', updateHouseholdBundle);
 router.delete('/:id', deleteHouseholdBundle);
 
 // Purchase & Contributions
-router.post('/:id/purchase', authMiddleware, activationMiddleware, purchaseHouseholdBundle);
+const kycMiddleware = require('../middlewares/kycMiddleware');
+router.post('/:id/purchase', authMiddleware, activationMiddleware, kycMiddleware, purchaseHouseholdBundle);
 router.get('/users/:userId/contributions', authMiddleware, getUserHouseholdContributions);
 router.get('/contributions/:contributionId', authMiddleware, getHouseholdContributionById);
 router.post('/payment/:contributionId', authMiddleware, makeHouseholdPayment);

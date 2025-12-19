@@ -24,8 +24,9 @@ router.post('/', createHousingPackage);
 router.put('/:id', authMiddleware, updateHousingPackage);
 router.delete('/:id', authMiddleware, deleteHousingPackage);
 
+const kycMiddleware = require('../middlewares/kycMiddleware');
 // User actions
-router.post('/:id/purchase', authMiddleware, activationMiddleware, purchaseHousingPackage);
+router.post('/:id/purchase', authMiddleware, activationMiddleware, kycMiddleware, purchaseHousingPackage);
 router.get('/users/:userId/contributions', authMiddleware, getUserHousingContributions);
 router.get('/contributions/:contributionId', authMiddleware, getHousingContributionById);
 router.post('/payment/:contributionId', authMiddleware, makeHousingPayment);

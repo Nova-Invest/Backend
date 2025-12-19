@@ -69,6 +69,7 @@ const transactionSchema = new mongoose.Schema({
       "food_package_payment",    // Added
       "activation_fee",  // Added for activation deduction
       "housing_payment",
+      "rent_payment",
       "household_bundle_payment"
     ],
     required: true,
@@ -203,6 +204,31 @@ const UserSchema = new mongoose.Schema(
       },
     },
 
+    // KYC information and status
+    kyc: {
+      status: {
+        type: String,
+        enum: ['not_submitted', 'pending', 'verified', 'rejected'],
+        default: 'not_submitted'
+      },
+      fullName: { type: String },
+      nin: { type: String },
+      ninImage: { type: String },
+      workIdImage: { type: String },
+      utilityBillImage: { type: String },
+      salaryRange: { type: String },
+      position: { type: String },
+      employerName: { type: String },
+      employerAddress: { type: String },
+      homeAddress: { type: String },
+      officeAddress: { type: String },
+      additionalDocuments: [{ type: String }],
+      submittedAt: { type: Date },
+      verifiedAt: { type: Date },
+      rejectedAt: { type: Date },
+      rejectionReason: { type: String }
+    },
+
     investmentPackage: [
       {
         name: {
@@ -266,6 +292,23 @@ const UserSchema = new mongoose.Schema(
         ref: "HouseholdContribution"
       },
       bundleName: {
+        type: String
+      },
+      startDate: {
+        type: Date
+      },
+      status: {
+        type: String,
+        enum: ['active', 'completed', 'cancelled'],
+        default: 'active'
+      }
+    }],
+    rentContributions: [{
+      contributionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "RentContribution"
+      },
+      packageName: {
         type: String
       },
       startDate: {
