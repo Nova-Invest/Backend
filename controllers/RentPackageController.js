@@ -81,29 +81,39 @@ const purchaseRentPackage = async (req, res) => {
     const { repaymentMonths } = req.body;
     const userId = req.user.id;
 
+    // Validate repayment months
     if (!repaymentMonths || repaymentMonths < 2 || repaymentMonths > 12) {
-      return res.status(400).json({ message: '❌ repaymentMonths must be between 2 and 12' });
+      return res.status(400).json({ 
+        message: '❌ repaymentMonths must be between 2 and 12' 
+      });
     }
 
     const rentPackage = await RentPackage.findById(packageId);
-    if (!rentPackage) return res.status(404).json({ message: '❌ Rent package not found' });
+    if (!rentPackage) {
+      return res.status(404).json({ message: '❌ Rent package not found' });
+    }
 
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: '❌ User not found' });
+    if (!user) {
+      return res.status(404).json({ message: '❌ User not found' });
+    }
 
     const totalAmount = rentPackage.amount;
-    const firstPaymentAmount = Math.ceil(totalAmount * 0.2);
+    const firstPaymentAmount = Math.ceil(totalAmount * 0.2); // 20% upfront
 
+    // Check if user has enough in wallet for upfront payment
     if (user.balances.walletBalance < firstPaymentAmount) {
       return res.status(400).json({
         message: '❌ Insufficient wallet balance for 20% upfront payment',
-        requiredAmount: firstPaymentAmount,
-        currentBalance: user.balances.walletBalance
+        required: firstPaymentAmount,
+        available: user.balances.walletBalance,
+        shortfall: firstPaymentAmount - user.balances.walletBalance
       });
     }
 
     const monthlyPayment = Math.ceil(totalAmount / repaymentMonths);
 
+    // Create rent contribution record
     const rentContribution = new RentContribution({
       userId,
       packageId,
@@ -112,56 +122,78 @@ const purchaseRentPackage = async (req, res) => {
       paidAmount: firstPaymentAmount,
       remainingAmount: totalAmount - firstPaymentAmount,
       monthlyPayment,
-      nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // ~30 days
       totalMonths: repaymentMonths,
-      currentMonth: 1
+      currentMonth: 1,
+      status: 'active'
     });
 
+    // Record the upfront payment
     rentContribution.paymentHistory.push({
       amount: firstPaymentAmount,
       paymentDate: new Date(),
       paymentMethod: 'wallet',
-      status: 'completed'
+      status: 'completed',
+      description: 'Upfront 20% payment'
     });
 
-    // Deduct first payment from user's wallet
+    // ONLY deduct the 20% from user's wallet
     user.balances.walletBalance -= firstPaymentAmount;
 
-    // Credit the rest (disbursed amount) to withdrawable balance
-    const disbursed = totalAmount - firstPaymentAmount;
-    user.balances.withdrawableBalance += disbursed;
+    // DO NOT credit any amount back to withdrawableBalance
+    // The full rent is disbursed by the platform — user owes the remaining 80% over time
 
-    // Add transaction record
+    // Add transaction record for the deduction
     user.transactions.push({
-      type: "rent_payment",
-      amount: firstPaymentAmount,
-      status: "completed",
-      description: `Upfront 20% for rent package ${rentPackage.name}`
+      type: 'rent_upfront_payment',
+      amount: -firstPaymentAmount, // negative to show deduction
+      status: 'completed',
+      description: `20% upfront payment for ${rentPackage.name} (₦${totalAmount.toLocaleString()})`,
+      reference: `RENT-${rentContribution._id.toString().slice(-8).toUpperCase()}`
     });
 
+    // Optional: Track active rent in user's profile
+    user.rentContributions = user.rentContributions || [];
     user.rentContributions.push({
       contributionId: rentContribution._id,
       packageName: rentPackage.name,
+      totalAmount,
       startDate: new Date(),
-      status: 'active'
+      status: 'active',
+      nextPaymentDue: rentContribution.nextPaymentDate
     });
 
-    await rentContribution.save();
-    await user.save();
+    // Save everything
+    await Promise.all([
+      rentContribution.save(),
+      user.save()
+    ]);
 
+    // Populate package details for response
     await rentContribution.populate('packageId');
 
+    // Success response
     res.status(201).json({
-      message: '✅ Rent package taken successfully',
+      message: '✅ Rent package activated successfully! Full rent has been disbursed.',
       contribution: rentContribution,
+      summary: {
+        totalRent: totalAmount,
+        paidToday: firstPaymentAmount,
+        monthlyRepayment: monthlyPayment,
+        remainingToPay: totalAmount - firstPaymentAmount,
+        newWalletBalance: user.balances.walletBalance
+      },
       user: {
-        walletBalance: user.balances.walletBalance,
-        withdrawableBalance: user.balances.withdrawableBalance
+        walletBalance: user.balances.walletBalance
       }
     });
 
   } catch (error) {
-    res.status(500).json({ message: '❌ Server Error', error: error.message });
+    console.error('Rent package purchase error:', error);
+    res.status(500).json({ 
+      message: '❌ Server error during purchase', 
+      error: error.message 
+    });
   }
 };
 

@@ -69,8 +69,6 @@ const getMyKYC = async (req, res) => {
 // @access Private (Admin)
 const getAllKYCSubmissions = async (req, res) => {
   try {
-    // only admin token has username in payload
-    if (!req.user || !req.user.username) return res.status(403).json({ message: '❌ Admin access required' });
 
     const users = await User.find({ 'kyc.status': { $in: ['pending', 'rejected', 'verified'] } }).select('kyc email firstName lastName');
     res.status(200).json(users);
@@ -84,7 +82,6 @@ const getAllKYCSubmissions = async (req, res) => {
 // @access Private (Admin)
 const verifyKYC = async (req, res) => {
   try {
-    if (!req.user || !req.user.username) return res.status(403).json({ message: '❌ Admin access required' });
 
     const { userId } = req.params;
     const user = await User.findById(userId);
@@ -111,7 +108,6 @@ const verifyKYC = async (req, res) => {
 // @access Private (Admin)
 const rejectKYC = async (req, res) => {
   try {
-    if (!req.user || !req.user.username) return res.status(403).json({ message: '❌ Admin access required' });
 
     const { userId } = req.params;
     const { reason } = req.body;
