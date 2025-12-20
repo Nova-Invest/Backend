@@ -14,8 +14,8 @@ router.post('/submit', authMiddleware, submitKYC);
 router.get('/me', authMiddleware, getMyKYC);
 
 // Admin routes
-router.get('/submissions', authMiddleware, getAllKYCSubmissions);
-router.put('/:userId/verify', authMiddleware, verifyKYC);
-router.put('/:userId/reject', authMiddleware, rejectKYC);
+router.get('/submissions', getAllKYCSubmissions);
+router.put('/:userId/verify', verifyKYC);
+router.put('/:userId/reject', rejectKYC);
 
 module.exports = router;
