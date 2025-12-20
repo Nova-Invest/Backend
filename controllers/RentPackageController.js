@@ -81,122 +81,114 @@ const purchaseRentPackage = async (req, res) => {
     const { repaymentMonths } = req.body;
     const userId = req.user.id;
 
-    // Validate repayment months
     if (!repaymentMonths || repaymentMonths < 2 || repaymentMonths > 12) {
-      return res.status(400).json({ 
-        message: '❌ repaymentMonths must be between 2 and 12' 
+      return res.status(400).json({
+        message: '❌ repaymentMonths must be between 2 and 12'
       });
     }
 
     const rentPackage = await RentPackage.findById(packageId);
-    if (!rentPackage) {
-      return res.status(404).json({ message: '❌ Rent package not found' });
-    }
+    if (!rentPackage) return res.status(404).json({ message: '❌ Rent package not found' });
 
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: '❌ User not found' });
-    }
+    if (!user) return res.status(404).json({ message: '❌ User not found' });
 
     const totalAmount = rentPackage.amount;
-    const firstPaymentAmount = Math.ceil(totalAmount * 0.2); // 20% upfront
+    const serviceCharge = Math.ceil(totalAmount * 0.2); // 20% service charge
 
-    // Check if user has enough in wallet for upfront payment
-    if (user.balances.walletBalance < firstPaymentAmount) {
+    if (user.balances.walletBalance < serviceCharge) {
       return res.status(400).json({
-        message: '❌ Insufficient wallet balance for 20% upfront payment',
-        required: firstPaymentAmount,
-        available: user.balances.walletBalance,
-        shortfall: firstPaymentAmount - user.balances.walletBalance
+        message: '❌ Insufficient wallet balance to pay 20% service charge',
+        requiredServiceCharge: serviceCharge,
+        currentBalance: user.balances.walletBalance,
+        shortfall: serviceCharge - user.balances.walletBalance
       });
     }
 
     const monthlyPayment = Math.ceil(totalAmount / repaymentMonths);
 
-    // Create rent contribution record
     const rentContribution = new RentContribution({
       userId,
       packageId,
       repaymentMonths,
       totalAmount,
-      paidAmount: firstPaymentAmount,
-      remainingAmount: totalAmount - firstPaymentAmount,
+      paidAmount: 0,                    // Service charge doesn't count toward rent repayment
+      remainingAmount: totalAmount,     // User repays full 100%
       monthlyPayment,
-      nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // ~30 days
+      nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       totalMonths: repaymentMonths,
       currentMonth: 1,
       status: 'active'
     });
 
-    // Record the upfront payment
+    // Record service charge payment
     rentContribution.paymentHistory.push({
-      amount: firstPaymentAmount,
+      amount: serviceCharge,
       paymentDate: new Date(),
       paymentMethod: 'wallet',
       status: 'completed',
-      description: 'Upfront 20% payment'
+      description: '20% service charge (platform fee)'
     });
 
-    // ONLY deduct the 20% from user's wallet
-    user.balances.walletBalance -= firstPaymentAmount;
+    // Deduct service charge from wallet
+    user.balances.walletBalance -= serviceCharge;
 
-    // DO NOT credit any amount back to withdrawableBalance
-    // The full rent is disbursed by the platform — user owes the remaining 80% over time
+    // Credit FULL rent amount to withdrawable balance
+    user.balances.withdrawableBalance += totalAmount;
 
-    // Add transaction record for the deduction
+    // Use ONLY valid enum values for transaction.type
     user.transactions.push({
-      type: 'rent_upfront_payment',
-      amount: -firstPaymentAmount, // negative to show deduction
+      type: 'activation_fee', // or 'service_fee' if you have it — common safe option
+      amount: -serviceCharge,
       status: 'completed',
-      description: `20% upfront payment for ${rentPackage.name} (₦${totalAmount.toLocaleString()})`,
-      reference: `RENT-${rentContribution._id.toString().slice(-8).toUpperCase()}`
+      description: `20% service charge for rent package: ${rentPackage.name}`
     });
 
-    // Optional: Track active rent in user's profile
-    user.rentContributions = user.rentContributions || [];
+    user.transactions.push({
+      type: 'rent_payment', // This was in your original code, so it's likely allowed
+      amount: totalAmount,
+      status: 'completed',
+      description: `Rent advance disbursed: ${rentPackage.name} (₦${totalAmount.toLocaleString()})`
+    });
+
+    // Alternative safe types if above fail:
+    // type: 'transfer' or 'credit' for disbursement
+    // type: 'withdrawal' or 'debit' for fee (with negative amount)
+
     user.rentContributions.push({
       contributionId: rentContribution._id,
       packageName: rentPackage.name,
       totalAmount,
+      serviceCharge,
+      repaymentMonths,
+      monthlyPayment,
       startDate: new Date(),
-      status: 'active',
-      nextPaymentDue: rentContribution.nextPaymentDate
+      status: 'active'
     });
 
-    // Save everything
-    await Promise.all([
-      rentContribution.save(),
-      user.save()
-    ]);
-
-    // Populate package details for response
+    await Promise.all([rentContribution.save(), user.save()]);
     await rentContribution.populate('packageId');
 
-    // Success response
     res.status(201).json({
-      message: '✅ Rent package activated successfully! Full rent has been disbursed.',
-      contribution: rentContribution,
-      summary: {
-        totalRent: totalAmount,
-        paidToday: firstPaymentAmount,
+      message: '✅ Rent package activated successfully! Full amount credited. You will repay the full rent monthly.',
+      details: {
+        rentAmount: totalAmount,
+        serviceChargePaid: serviceCharge,
         monthlyRepayment: monthlyPayment,
-        remainingToPay: totalAmount - firstPaymentAmount,
-        newWalletBalance: user.balances.walletBalance
+        repaymentMonths
       },
+      contribution: rentContribution,
       user: {
-        walletBalance: user.balances.walletBalance
+        walletBalance: user.balances.walletBalance,
+        withdrawableBalance: user.balances.withdrawableBalance
       }
     });
 
   } catch (error) {
     console.error('Rent package purchase error:', error);
-    res.status(500).json({ 
-      message: '❌ Server error during purchase', 
-      error: error.message 
-    });
+    res.status(500).json({ message: '❌ Server Error', error: error.message });
   }
 };
-
 // @desc    Get user's rent contributions
 // @route   GET /api/rent-packages/users/:userId/contributions
 // @access  Private

@@ -57,21 +57,23 @@ const transactionSchema = new mongoose.Schema({
   type: {
     type: String,
     enum: [
-      "withdrawal",
-      "fund_wallet",
-      "investment",
-      "cooperative_payment",
-      "cooperative_withdrawal",
-      "manual_wallet_update",          // Added
-      "manual_withdrawable_update",     // Added
-      "manual_invested_update",         // Added
-      "manual_cooperative_update",
-      "food_package_payment",    // Added
-      "activation_fee",  // Added for activation deduction
-      "housing_payment",
-      "rent_payment",
-      "household_bundle_payment"
-    ],
+  "withdrawal",
+  "fund_wallet",
+  "investment",
+  "cooperative_payment",
+  "cooperative_withdrawal",
+  "manual_wallet_update",
+  "manual_withdrawable_update",
+  "manual_invested_update",
+  "manual_cooperative_update",
+  "food_package_payment",
+  "activation_fee",
+  "housing_payment",
+  "rent_payment",                  // Already there – good for monthly repayments
+  "rent_service_charge",           // NEW: For the 20% upfront service charge
+  "rent_disbursement",             // NEW: For crediting the full rent amount to withdrawable balance
+  "household_bundle_payment"
+],
     required: true,
   },
   amount: {
