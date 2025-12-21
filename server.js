@@ -10,6 +10,7 @@ const housingRoutes = require('./routes/housingRoutes');
 const householdRoutes = require('./routes/householdRoutes');
 const rentRoutes = require('./routes/rentRoutes');
 const kycRoutes = require('./routes/kycRoutes');
+const transactionRoutes = require('./routes/transactionRoutes');
 
 const app = express();
 app.use(express.json());
@@ -30,6 +31,7 @@ app.use('/api/housing', housingRoutes);
 app.use('/api/household', householdRoutes);
 app.use('/api/rent-packages', rentRoutes);
 app.use('/api/kyc', kycRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 // Start Server
 const PORT = process.env.PORT || 8000;
