@@ -134,4 +134,67 @@ const getTransactionById = async (req, res) => {
   }
 };
 
-module.exports = { getAllTransactions, getTransactionById };
+// @desc Get current user's transactions
+// @route GET /api/transactions/me
+// @access Private (owner)
+const getMyTransactions = async (req, res) => {
+  try {
+    const userId = req.user && req.user.id;
+    if (!userId) return res.status(401).json({ message: '❌ Unauthorized' });
+
+    const {
+      page = 1,
+      limit = 25,
+      type,
+      status,
+      startDate,
+      endDate,
+      sort = '-date'
+    } = req.query;
+
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = Math.min(parseInt(limit, 10) || 25, 200);
+    const skip = (pageNum - 1) * limitNum;
+
+    const matchConditions = [];
+    if (type) matchConditions.push({ type });
+    if (status) matchConditions.push({ status });
+    if (startDate || endDate) {
+      const range = {};
+      if (startDate) range.$gte = new Date(startDate);
+      if (endDate) range.$lte = new Date(endDate);
+      matchConditions.push({ date: range });
+    }
+
+    const pipeline = [
+      { $match: { _id: mongoose.Types.ObjectId(userId) } },
+      { $project: { transactions: 1 } },
+      { $unwind: '$transactions' },
+      { $replaceRoot: { newRoot: '$transactions' } }
+    ];
+
+    if (matchConditions.length > 0) pipeline.push({ $match: { $and: matchConditions } });
+
+    pipeline.push(
+      { $sort: parseSort(sort) },
+      {
+        $facet: {
+          results: [{ $skip: skip }, { $limit: limitNum }],
+          totalCount: [{ $count: 'count' }]
+        }
+      }
+    );
+
+    const agg = await User.aggregate(pipeline).allowDiskUse(true);
+    const results = (agg[0] && agg[0].results) || [];
+    const totalCount = (agg[0] && agg[0].totalCount[0] && agg[0].totalCount[0].count) || 0;
+
+    res.status(200).json({ page: pageNum, limit: limitNum, total: totalCount, results });
+  } catch (error) {
+    console.error('getMyTransactions error', error);
+    res.status(500).json({ message: '❌ Server Error', error: error.message });
+  }
+};
+
+module.exports = { getAllTransactions, getTransactionById, getMyTransactions };
+
